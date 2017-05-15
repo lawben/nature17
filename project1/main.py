@@ -3,7 +3,7 @@ from algos import random_local_search, one_one_ea, one_lambda_ea
 
 
 N_STEP = 25
-N_MAX = 75
+N_MAX = 50
 ITERATIONS = 10
 
 
@@ -14,8 +14,8 @@ def test_algo(algo, eval_fn):
         iterations = [algo(eval_fn, n) for _ in range(ITERATIONS)]
         all_iterations.append(iterations)
         avg_iterations = sum(iterations) // len(iterations)
-        # print("Finnished: {} - {} - {} - {}".format(
-        #     algo.__name__, eval_fn.__name__, n, avg_iterations))
+        print("Finnished: {} - {} - {} - {}".format(
+            algo.__name__, eval_fn.__name__, n, avg_iterations))
         n += N_STEP
 
     return all_iterations
