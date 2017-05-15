@@ -10,11 +10,7 @@ LAMBDA = 10
 
 
 def generate_x(n):
-    return [bool(random.getrandbits(1)) for _ in range(n)]
-
-
-def decision(probability):
-    return random.random() < probability
+    return [random.getrandbits(1) for _ in range(n)]
 
 
 def stopping_criterion(eval_fn, n):
@@ -42,8 +38,8 @@ def generate_offspring(x, n):
     y = x.copy()
     flip_probability = 1 / n
     for i in range(n):
-        if decision(flip_probability):
-            y[i] = not y[i]
+        if random.random() < flip_probability:
+            y[i] = 1 - y[i]
     return y
 
 

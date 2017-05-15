@@ -13,8 +13,8 @@ def test_algo(algo, eval_fn, max_n):
         iterations = [algo(eval_fn, n) for _ in range(ITERATIONS)]
         all_iterations.append(iterations)
         avg_iterations = sum(iterations) // len(iterations)
-        print("Finnished: {} - {} - {} - {}".format(
-            algo.__name__, eval_fn.__name__, n, avg_iterations))
+        # print("Finnished: {} - {} - {} - {}".format(
+        #     algo.__name__, eval_fn.__name__, n, avg_iterations))
         n += N_STEP
 
     return all_iterations
