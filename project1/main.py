@@ -43,8 +43,8 @@ def main(steps, filename):
                 rows.append([algo_name, eval_fn.__name__, n] + iterations)
 
     header = ['algorithm', 'test-function', 'n'] + ['iteration-' + str(1 + i) for i in range(ITERATIONS)]
-    df = pd.DataFrame(rows, columns=header)
-    df.to_csv(filename)
+    df = pd.DataFrame.from_records(rows, columns=header)
+    df.to_csv(filename, index=False)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
