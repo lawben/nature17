@@ -42,6 +42,14 @@ def bin_val(x):
     return int(x.bin, 2)
 
 
+OPTIMA = {
+    one_max: lambda n: n,
+    leading_ones: lambda n: n,
+    jump: lambda n: n,
+    royal_roads: lambda n: n // 5,
+    bin_val: lambda n: 2**n - 1
+}
+
 if __name__ == '__main__':
     a = BitArray('0b1100011111')
     print(a.bin)

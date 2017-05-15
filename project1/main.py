@@ -1,7 +1,7 @@
 from bitstring import BitArray
 
 from test_functions import one_max, jump, bin_val, royal_roads, leading_ones
-from algos import random_local_search
+from algos import random_local_search, one_lambda_ea
 
 N_STEP = 25
 ITERATIONS = 10
@@ -20,9 +20,10 @@ def test_algo(algo, eval_fn, max_n):
 
 def main():
     its = []
-    for algo in [random_local_search]:
-        for eval_fn in [one_max, jump, bin_val, royal_roads, leading_ones]:
+    for algo in [random_local_search, one_lambda_ea]:
+        for eval_fn in [one_max, bin_val, royal_roads, leading_ones]:
             its += test_algo(algo, eval_fn, 50)
+            print(eval_fn)
     print(its)
 
 
