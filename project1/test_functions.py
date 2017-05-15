@@ -27,7 +27,7 @@ def jump(x):
     elif n - K_JUMP <= one_max_x and one_max_x < n:
         return n - K_JUMP
     else:
-        return one_max
+        return one_max_x
 
 
 def royal_roads(x):
