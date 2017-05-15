@@ -37,8 +37,12 @@ def royal_roads(x):
 
 
 def bin_val(x):
-    bit_string = "".join(["1" if a else "0" for a in x])
-    return int(bit_string, 2)
+    a = 0
+    for i in x:
+        a <<= 1
+        if i:
+            a |= 1
+    return a
 
 
 OPTIMA = {

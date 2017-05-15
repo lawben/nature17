@@ -1,4 +1,5 @@
 from functools import partial
+import argparse
 
 import pandas as pd
 
@@ -7,14 +8,14 @@ from algos import random_local_search, one_one_ea, one_lambda_ea
 
 
 N_STEP = 25
-N_MAX = 50
 ITERATIONS = 10
 
 
-def test_algo(algo, eval_fn):
+def test_algo(algo, eval_fn, steps):
     n = N_STEP
+    n_max = N_STEP * steps
     all_iterations = []
-    for n in range(N_STEP, N_MAX + 1, N_STEP):
+    for n in range(N_STEP, n_max + 1, N_STEP):
         iterations = [algo(eval_fn, n) for _ in range(ITERATIONS)]
         yield (n, iterations)
         n += N_STEP
@@ -22,7 +23,7 @@ def test_algo(algo, eval_fn):
     return all_iterations
 
 
-def main():
+def main(steps, filename):
     rows = []
     algos = [('RLS', random_local_search),
              ('(1+1)-EA', one_one_ea),
@@ -38,12 +39,16 @@ def main():
 
     for algo_name, algo in algos:
         for eval_fn in evals:
-            for n, iterations in test_algo(algo, eval_fn):
+            for n, iterations in test_algo(algo, eval_fn, steps):
                 rows.append([algo_name, eval_fn.__name__, n] + iterations)
 
     header = ['algorithm', 'test-function', 'n'] + ['iteration-' + str(1 + i) for i in range(ITERATIONS)]
     df = pd.DataFrame(rows, columns=header)
-    df.to_csv('results.csv')
+    df.to_csv(filename)
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--steps', default=2, type=int)
+    parser.add_argument('--outfile', default='results.csv')
+    args = parser.parse_args()
+    main(args.steps, args.outfile)
