@@ -1,12 +1,15 @@
 from bitstring import BitArray
 
+K_JUMP = 3
+K_ROYAL = 5
+
 
 def n_(x):
     return len(a.bin)
 
 
 def oneMax(x):
-    return sum([i for i in x])
+    return sum([_ for _ in x])
 
 
 def leadingOnes(x):
@@ -20,24 +23,22 @@ def leadingOnes(x):
 
 
 def jump(x):
-    k = 3
     n = n_(x)
     oneMax_x = oneMax(x)
 
     if oneMax_x == n:
         return n
-    elif n - k <= oneMax_x and oneMax_x < n:
-        return n - k
+    elif n - K_JUMP <= oneMax_x and oneMax_x < n:
+        return n - K_JUMP
     else:
         return oneMax
 
 
 def royalRoads(x):
-    k = 5
     n = n_(x)
     road = 0
-    for i in range(0, n, k):
-        road += 1 if x[i:i+k].bin == '11111' else 0
+    for i in range(0, n, K_ROYAL):
+        road += 1 if x[i:i+K_ROYAL].bin == '11111' else 0
     return road
 
 
