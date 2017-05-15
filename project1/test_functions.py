@@ -1,5 +1,3 @@
-from bitstring import BitArray
-
 K_JUMP = 3
 K_ROYAL = 5
 
@@ -39,7 +37,8 @@ def royal_roads(x):
 
 
 def bin_val(x):
-    return int(x.bin, 2)
+    bit_string = "".join(["1" if a else "0" for a in x])
+    return int(bit_string, 2)
 
 
 OPTIMA = {
@@ -51,7 +50,7 @@ OPTIMA = {
 }
 
 if __name__ == '__main__':
-    a = BitArray('0b1100011111')
+    a = [1, 1, 0, 0, 0, 1, 1, 1, 1, 1]
     print(a.bin)
     print(bin_val(a))
     print(one_max(a))

@@ -1,7 +1,6 @@
-from bitstring import BitArray
-
 from test_functions import one_max, jump, bin_val, royal_roads, leading_ones
-from algos import random_local_search, one_lambda_ea
+from algos import random_local_search, one_one_ea, one_lambda_ea
+
 
 N_STEP = 25
 ITERATIONS = 10
@@ -13,6 +12,9 @@ def test_algo(algo, eval_fn, max_n):
     while n <= max_n:
         iterations = [algo(eval_fn, n) for _ in range(ITERATIONS)]
         all_iterations.append(iterations)
+        avg_iterations = sum(iterations) // len(iterations)
+        print("Finnished: {} - {} - {} - {}".format(
+            algo.__name__, eval_fn.__name__, n, avg_iterations))
         n += N_STEP
 
     return all_iterations
@@ -20,11 +22,12 @@ def test_algo(algo, eval_fn, max_n):
 
 def main():
     its = []
-    for algo in [random_local_search, one_lambda_ea]:
-        for eval_fn in [one_max, bin_val, royal_roads, leading_ones]:
+    algos = [random_local_search, one_lambda_ea, one_one_ea]
+    evals = [one_max, jump, bin_val, royal_roads, leading_ones]
+
+    for algo in algos:
+        for eval_fn in evals:
             its += test_algo(algo, eval_fn, 50)
-            print(eval_fn)
-    print(its)
 
 
 if __name__ == '__main__':
