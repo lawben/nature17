@@ -14,23 +14,20 @@ ITERATIONS = 10
 def test_algo(algo, eval_fn, steps):
     n = N_STEP
     n_max = N_STEP * steps
-    all_iterations = []
     for n in range(N_STEP, n_max + 1, N_STEP):
         iterations = [algo(eval_fn, n) for _ in range(ITERATIONS)]
         yield (n, iterations)
         n += N_STEP
 
-    return all_iterations
-
 
 def main(steps, filename):
     rows = []
     algos = [('RLS', random_local_search),
-             ('(1+1)-EA', one_one_ea),
-             ('(1+2)-EA',  partial(one_lambda_ea, λ=2)),
-             ('(1+10)-EA',  partial(one_lambda_ea, λ=10)),
-             ('(1+20)-EA',  partial(one_lambda_ea, λ=20)),
-             ('(1+50)-EA',  partial(one_lambda_ea, λ=50))]
+             ('(1+1)-EA', partial(one_lambda_ea, λ=1)),
+             ('(1+2)-EA', partial(one_lambda_ea, λ=2)),
+             ('(1+10)-EA', partial(one_lambda_ea, λ=10)),
+             ('(1+20)-EA', partial(one_lambda_ea, λ=20)),
+             ('(1+50)-EA', partial(one_lambda_ea, λ=50))]
     evals = [one_max,
              jump,
              bin_val,
@@ -45,6 +42,7 @@ def main(steps, filename):
     header = ['algorithm', 'test-function', 'n'] + ['iteration-' + str(1 + i) for i in range(ITERATIONS)]
     df = pd.DataFrame.from_records(rows, columns=header)
     df.to_csv(filename, index=False)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
