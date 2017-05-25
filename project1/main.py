@@ -38,9 +38,14 @@ def main(steps, filename):
              leading_ones]
 
     for algo_name, algo in algos:
+        print('====================')
+        print('start algo %s' % algo_name)
         for eval_fn in evals:
             for n, iterations in test_algo(algo, eval_fn, steps):
                 rows.append([algo_name, eval_fn.__name__, n] + iterations)
+                print('    fn: %s n: %d done' % (eval_fn.__name__, n))
+        print('finished algo %s' % algo_name)
+        print()
 
     header = ['algorithm', 'test-function', 'n'] + ['iteration-' + str(1 + i) for i in range(ITERATIONS)]
     df = pd.DataFrame.from_records(rows, columns=header)
