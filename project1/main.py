@@ -1,5 +1,6 @@
 import argparse
 from functools import partial
+from multiprocessing import Pool
 
 import pandas as pd
 
@@ -11,13 +12,16 @@ N_STEP = 25
 ITERATIONS = 10
 
 
-def test_algo(algo, eval_fn, steps, strict):
-    n = N_STEP
-    n_max = N_STEP * steps
-    for n in range(N_STEP, n_max + 1, N_STEP):
+def test_algo_helper(n, algo, eval_fn, steps, strict):
         iterations = [algo(eval_fn, n, strict) for _ in range(ITERATIONS)]
-        yield (n, iterations)
-        n += N_STEP
+        return n, iterations
+
+
+def test_algo(algo, eval_fn, steps, strict):
+    pool = Pool(4)
+    n_max = N_STEP * steps
+    fn = partial(test_algo_helper, algo=algo, eval_fn=eval_fn, steps=steps, strict=strict)
+    yield from pool.map(fn, range(N_STEP, n_max + 1, N_STEP))
 
 
 def main(steps, filename):
@@ -27,11 +31,11 @@ def main(steps, filename):
              ('(1+10)-EA', partial(one_lambda_ea, λ=10)),
              ('(1+20)-EA', partial(one_lambda_ea, λ=20)),
              ('(1+50)-EA', partial(one_lambda_ea, λ=50))]
-    evals = [one_max,
-             jump,
-             bin_val,
-             royal_roads,
-             leading_ones]
+    evals = [one_max]
+            #  jump,
+            #  bin_val,
+            #  royal_roads,
+            #  leading_ones]
     is_strict = [False, True]
 
     for strict in is_strict:
