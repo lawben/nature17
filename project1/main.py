@@ -38,7 +38,7 @@ def main(steps, filename):
         rows = []
         if strict:
             filename = "strict-" + filename
-            algos = algos[1:]
+            evals = [one_max, bin_val, leading_ones]
 
         for algo_name, algo in algos:
             print('====================')
