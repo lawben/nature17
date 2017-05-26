@@ -20,12 +20,14 @@ def jump(x):
     n = len(x)
     one_max_x = one_max(x)
 
-    if one_max_x == n:
-        return n
+    if one_max_x < n - K_JUMP:
+        return one_max_x
     elif n - K_JUMP <= one_max_x and one_max_x < n:
         return n - K_JUMP
+    elif one_max_x == n:
+        return n
     else:
-        return one_max_x
+        raise Exception("This should never happen!")
 
 
 def royal_roads(x):
@@ -49,7 +51,7 @@ OPTIMA = {
     one_max: lambda n: n,
     leading_ones: lambda n: n,
     jump: lambda n: n,
-    royal_roads: lambda n: n // 5,
+    royal_roads: lambda n: n // K_ROYAL,
     bin_val: lambda n: 2**n - 1
 }
 
