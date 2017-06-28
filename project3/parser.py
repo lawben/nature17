@@ -1,7 +1,6 @@
 import sys
 import re
 
-
 def get_int_from_line(line):
     return int(re.search("(\d+)", line).group(0))
 
@@ -27,7 +26,7 @@ def parse(data_file):
 
     matrix = []
     for i in range(matrix_start, matrix_start + dimension):
-        data_row = raw_data[i].split()
+        data_row = [int(x) for x in raw_data[i].split()]
         matrix.append(data_row)
 
     return matrix
@@ -52,9 +51,23 @@ def parse_tour(data_file):
     return tour
 
 
+def get_opt(tour, matrix):
+    tour_offset = tour[1:]
+    tour_offset.append(tour[0])
+    edges = zip(tour, tour_offset)
+    return sum(matrix[i - 1][j - 1] for (i, j) in edges)
+
+
 if __name__ == '__main__':
+    mat = parse(sys.argv[1])
+    tour = parse_tour(sys.argv[2])
+    opt = get_opt(tour, mat)
+
     print("Matrix:")
-    print(parse(sys.argv[1]))
+    print(mat)
     print("\n")
     print("Tour:")
-    print(parse_tour(sys.argv[2]))
+    print(tour)
+    print("\n")
+    print("Optimum:")
+    print(opt)
