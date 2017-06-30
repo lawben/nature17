@@ -32,6 +32,23 @@ def parse(data_file):
     return matrix
 
 
+def parse_points(data_file):
+    raw_data = [line for line in open(data_file)]
+    dimension = get_dimension(raw_data)
+
+    for i, line in enumerate(raw_data):
+        if line.startswith("DISPLAY_DATA_SECTION"):
+            points_start = i + 1
+            break
+
+    points = []
+    for i in range(points_start, points_start + dimension):
+        _, x, y = [float(x) for x in raw_data[i].split()]
+        points.append((x, y))
+
+    return points
+
+
 def parse_tour(data_file):
     raw_data = [line for line in open(data_file)]
     tour_start = -1
@@ -46,7 +63,7 @@ def parse_tour(data_file):
 
     tour = []
     for i in range(tour_start, tour_start + dimension):
-        tour.append(get_int_from_line(raw_data[i]))
+        tour.append(get_int_from_line(raw_data[i]) - 1)
 
     return tour
 
@@ -55,7 +72,7 @@ def get_opt(tour, matrix):
     tour_offset = tour[1:]
     tour_offset.append(tour[0])
     edges = zip(tour, tour_offset)
-    return sum(matrix[i - 1][j - 1] for (i, j) in edges)
+    return sum(matrix[i][j] for (i, j) in edges)
 
 
 if __name__ == '__main__':
