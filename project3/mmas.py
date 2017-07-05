@@ -1,7 +1,8 @@
-import numpy as np
 import sys
 import random
 import itertools as it
+
+import numpy as np
 
 from parser import parse, parse_tour, parse_points, get_opt
 from plot_tsp import TspPlotter
@@ -9,7 +10,8 @@ from plot_tsp import TspPlotter
 
 class MMAS:
 
-    def __init__(self, adjacency_matrix, rho, tau_min, tau_max, alpha, beta, opt, plotter=None):
+    def __init__(self, adjacency_matrix, rho, tau_min, tau_max, alpha, beta,
+                 opt, plotter=None):
         self.edge_weights = np.matrix(adjacency_matrix)
 
         self.rho = rho
@@ -56,10 +58,12 @@ class MMAS:
             self.update_pheremones(self.best_tour)
             counter += 1
             if counter % 1000 == 0:
-                print('Iterations: %d  Current opt: %d' % (counter, self.best_value))
+                print('Iterations: %d  Current opt: %d' % (
+                      counter, self.best_value))
                 if self.plotter is not None:
                     self.plotter.plot_solution(self.best_tour)
-                    self.plotter.plot_pheremones(self.all_edges, self.pheremones)
+                    self.plotter.plot_pheremones(self.all_edges,
+                                                 self.pheremones)
             if counter == 10000:
                 break
 
@@ -122,25 +126,8 @@ class MMAS:
             current_tau = self.get_pheromone(*edge)
             new_tau = None
             if self.edge_id(*edge) in tour_edge_ids:
-                new_tau = min((1 - self.rho) * current_tau + self.rho, self.tau_max)
+                new_tau = min((1 - self.rho) * current_tau + self.rho,
+                              self.tau_max)
             else:
                 new_tau = max((1 - self.rho) * current_tau, self.tau_min)
             self.set_pheromone(new_tau, *edge)
-
-
-if __name__ == '__main__':
-    # mat = [
-    #     [0, 1, 2, 2, 1],
-    #     [1, 0, 1, 2, 2],
-    #     [2, 1, 0, 1, 2],
-    #     [2, 2, 1, 0, 1],
-    #     [1, 2, 2, 1, 0]
-    # ]
-    # n = len(mat)
-    # mmas = MMAS(mat, 1/n, 1/(n**2), 1 - 1/n, 1, 0, 5)
-    mmas = MMAS.of(sys.argv[1], sys.argv[2])
-    tour, value, iters = mmas.run()
-
-    print(tour)
-    print(value)
-    print(iters)
