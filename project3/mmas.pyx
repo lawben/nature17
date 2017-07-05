@@ -62,7 +62,7 @@ cdef class MMAS:
         else:
             plotter = None
         mat = np.asmatrix(mat, dtype=np.float32)
-        return MMAS(mat, opt, plotter)
+        return MMAS(mat, opt, plotter=plotter)
 
     def run(self):
         self.init_pheremones()
