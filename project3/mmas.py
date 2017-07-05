@@ -51,7 +51,7 @@ class MMAS:
             plotter = TspPlotter(points, TspPlotter.nodes2tour(tour))
         else:
             plotter = None
-        return MMAS(mat, opt, plotter)
+        return MMAS(mat, opt, plotter=plotter)
 
     def run(self):
         self.init_pheremones()
