@@ -29,6 +29,7 @@ class TspPlotter:
         self.ax1 = ax1
         self.ax2 = ax2
         self.ax3 = ax3
+        plt.tight_layout()
 
     def plot_arrow(self, ax, edge, width=None):
         start, end = edge
