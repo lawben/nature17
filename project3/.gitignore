@@ -1,2 +1,6 @@
 .python-version
 __pycache__
+mmas.c
+mmas.html
+*.so
+build
