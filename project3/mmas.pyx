@@ -21,19 +21,20 @@ cdef class MMAS:
     cdef object plotter
     cdef list best_tour, all_nodes, all_edges
 
-    def __init__(self, np.ndarray adjacency_matrix, float rho, float tau_min, float tau_max, float alpha, float beta,
-                 float opt, object plotter=None):
-    
+    def __init__(self, np.ndarray adjacency_matrix, opt, rho=None, tau_min=None, 
+                 tau_max=None, alpha=1.0, beta=4.0, object plotter=None):
+        n = len(adjacency_matrix)
         self.edge_weights = adjacency_matrix
         self.n = self.edge_weights.shape[0]
-        self.pheremones = np.empty([self.n, self.n], dtype=np.float32)
+        self.pheremones = np.empty([n, n], dtype=np.float32)
 
-        self.rho = rho
-        self.tau_min = tau_min
-        self.tau_max = tau_max
+        # Init default values
+        self.rho = 1/n if not rho else rho
+        self.tau_min = 1/(n*n) if not tau_min else tau_min
+        self.tau_max = 1 - 1/n if not tau_max else tau_max
         self.alpha = alpha
         self.beta = beta
-        self.opt = opt
+        self.n = n
 
         self.plotter = plotter
 
@@ -48,14 +49,20 @@ cdef class MMAS:
         mat = parse(data_file)
         tour = parse_tour(tour_file)
         opt = get_opt(tour, mat)
-        points = parse_points(data_file)
+        try:
+            points = parse_points(data_file)
+        except ValueError:
+            # Cannot display points in plot, so no plot needed
+            print("Cannot parse point from file. No plot possible.")
+            use_plotter = False
+
         n = len(mat)
         if use_plotter:
             plotter = TspPlotter(points, TspPlotter.nodes2tour(tour))
         else:
             plotter = None
         mat = np.asmatrix(mat, dtype=np.float32)
-        return MMAS(mat, 1/n, 1/(n**2), 1 - 1/n, 1, 4, opt, plotter)
+        return MMAS(mat, opt, plotter)
 
     def run(self):
         self.init_pheremones()
@@ -70,7 +77,7 @@ cdef class MMAS:
             self.update_pheremones(self.best_tour)
             counter += 1
             if counter % 1000 == 0:
-                print('Iterations: %d  Current opt: %d' % (
+                print('Iterations: %d  Current opt: %f' % (
                       counter, self.best_value))
                 if self.plotter is not None:
                     self.plotter.plot_solution(self.best_tour)

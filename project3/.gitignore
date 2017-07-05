@@ -1,6 +1,12 @@
 .python-version
 __pycache__
+<<<<<<< HEAD
 mmas.c
 mmas.html
 *.so
 build
+=======
+
+# Mac stuff
+.vscode/
+>>>>>>> master
