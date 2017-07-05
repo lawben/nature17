@@ -38,7 +38,7 @@ def parse_points(data_file):
     raise ValueError("Cannot parse points from file!")
 
 
-def parse_matrix(raw_data, matrix_start, dimension):
+def parse_full_matrix(raw_data, matrix_start, dimension):
     matrix = []
     for i in range(matrix_start, matrix_start + dimension):
         data_row = [int(x) for x in raw_data[i].split()]
@@ -47,16 +47,54 @@ def parse_matrix(raw_data, matrix_start, dimension):
     return matrix
 
 
-def parse_node_coords(raw_data, matrix_start, dimension):
-    info = parse_node_points(raw_data, matrix_start, dimension)
+def parse_lower_diag_row(raw_data, matrix_start):
+    raw_matrix = []
 
-    n = len(info)
+    row = []
+    for i in range(matrix_start, len(raw_data)):
+        line = raw_data[i]
+        if "EOF" in line:
+            break
+
+        file_row = [float(x) for x in line.split()]
+        for val in file_row:
+            row.append(val)
+            if val == 0:
+                raw_matrix.append(row)
+                row = []
+
+    n = len(raw_matrix)
+
+    matrix = np.empty((n, n))
+    for i in range(n):
+        dist_row = raw_matrix[i]
+        for j in range(i + 1):
+            matrix[i, j] = matrix[j, i] = dist_row[j]
+
+    return matrix
+
+
+def parse_matrix(raw_data, matrix_start, dimension):
+    for line in raw_data:
+        if "LOWER_DIAG_ROW" in line:
+            return parse_lower_diag_row(raw_data, matrix_start)
+
+        if "FULL_MATRIX" in line:
+            return parse_full_matrix(raw_data, matrix_start, dimension)
+
+    raise ValueError("File does not contain matrix!")
+
+
+def parse_node_coords(raw_data, matrix_start, dimension):
+    points = parse_node_points(raw_data, matrix_start, dimension)
+
+    n = len(points)
     matrix = np.empty((n, n))
 
     for i in range(n):
-        x1, y1 = info[i]
+        x1, y1 = points[i]
         for j in range(i, n):
-            x2, y2 = info[j]
+            x2, y2 = points[j]
             dist = math.sqrt((x1 - x2)**2 + (y1 - y2)**2)
             matrix[i, j] = matrix[j, i] = dist
 
