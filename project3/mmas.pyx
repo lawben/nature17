@@ -17,14 +17,15 @@ cdef class MMAS:
 
     cdef float[:,:] edge_weights, pheremones
     cdef float rho, tau_min, tau_max, alpha, beta, opt, best_value
-    cdef int n
+    cdef int n, goal_deviation
     cdef object plotter
     cdef list best_tour, all_nodes, all_edges
 
     def __init__(self, np.ndarray adjacency_matrix, opt, rho=None, tau_min=None, 
-                 tau_max=None, alpha=1.0, beta=4.0, object plotter=None):
+                 tau_max=None, alpha=1.0, beta=4.0, object plotter=None, goal_deviation=0):
         n = len(adjacency_matrix)
         self.edge_weights = adjacency_matrix
+        self.opt = opt
         self.n = self.edge_weights.shape[0]
         self.pheremones = np.empty([n, n], dtype=np.float32)
 
@@ -39,13 +40,20 @@ cdef class MMAS:
         self.plotter = plotter
 
         self.best_tour = None
-        self.best_value = sys.maxsize
+        self.best_value = float('inf')
 
         self.all_nodes = list(range(self.n))
         self.all_edges = list(it.combinations(self.all_nodes, 2))
+        self.goal_deviation = goal_deviation
 
     @classmethod
-    def of(cls, data_file, tour_file, use_plotter=True):
+    def get_deviation(cls, opt, best_value):
+        """Return the deviation of the current score from the optimum.
+        Example: Optimum = 2000, Score = 3000 -> Deviation = 0.5"""
+        return (best_value - opt) / opt
+
+    @classmethod
+    def of(cls, data_file, tour_file, use_plotter=True, goal_deviation=0):
         mat = parse(data_file)
         tour = parse_tour(tour_file)
         opt = get_opt(tour, mat)
@@ -53,7 +61,7 @@ cdef class MMAS:
             points = parse_points(data_file)
         except ValueError:
             # Cannot display points in plot, so no plot needed
-            print("Cannot parse point from file. No plot possible.")
+            print("Cannot parse points from file. No plot possible.")
             use_plotter = False
 
         n = len(mat)
@@ -62,13 +70,13 @@ cdef class MMAS:
         else:
             plotter = None
         mat = np.asmatrix(mat, dtype=np.float32)
-        return MMAS(mat, opt, plotter=plotter)
+        return MMAS(mat, opt, plotter=plotter, goal_deviation=goal_deviation)
 
     def run(self):
         self.init_pheremones()
         cdef int counter = 0
-        print('Optimum: %d' % self.opt)
-        while self.best_value > self.opt:
+        print('Optimum: %f' % self.opt)
+        while MMAS.get_deviation(self.opt, self.best_value) * 100 > self.goal_deviation:
             for i in range(4):
                 tour, value = self.construct()
                 if value < self.best_value:
