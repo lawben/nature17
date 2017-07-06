@@ -9,7 +9,7 @@ def notify(msg):
 
 def main(args):
     data_file = args.tsp_file
-    notify = args.notify
+    should_notify = args.notify
     goal = float(args.goal)
     tour_file = data_file[:-4] + ".opt"
     mmas = MMAS.of(data_file, tour_file, not args.no_plot, goal)
@@ -18,10 +18,10 @@ def main(args):
     outputs = ["Tour: " + str(tour), "Score: " + str(value), "Iterations: " + str(iters)]
     print("\n".join(outputs))
 
-    if notify:
+    if should_notify:
         message = "Goal Deviation of {0:.0f}% reached for file {1:s} after {2:0d} iterations\n".format(goal, data_file,
                                                                                                        iters)
-        MMAS.notify(message)
+        notify(message)
 
 
 if __name__ == '__main__':
