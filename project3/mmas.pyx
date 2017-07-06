@@ -1,5 +1,4 @@
 #cython: boundscheck=False, wraparound=False, nonecheck=False
-import os
 import sys
 import random
 import itertools as it
@@ -52,10 +51,6 @@ cdef class MMAS:
         """Return the deviation of the current score from the optimum.
         Example: Optimum = 2000, Score = 3000 -> Deviation = 0.5"""
         return (best_value - opt) / opt
-
-    @classmethod
-    def notify(cls, msg):
-        os.system("ntfy -b telegram send '{}'".format(msg))
 
     @classmethod
     def of(cls, data_file, tour_file, use_plotter=True, goal_deviation=0):

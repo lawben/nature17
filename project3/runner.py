@@ -1,6 +1,10 @@
+import os
 from argparse import ArgumentParser
-
 from mmas import MMAS
+
+
+def notify(msg):
+    os.system("ntfy -b telegram send '{}'".format(msg))
 
 
 def main(args):
