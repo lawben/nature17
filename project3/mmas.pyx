@@ -1,37 +1,47 @@
+#cython: boundscheck=False, wraparound=False, nonecheck=False
 import sys
 import random
 import itertools as it
 
+from cpython cimport array
+import array
+
 import numpy as np
+cimport numpy as np
 
 from parser import parse, parse_tour, parse_points, get_opt
 from plot_tsp import TspPlotter
 
 
-class MMAS:
+cdef class MMAS:
 
-    def __init__(self, adjacency_matrix, opt, rho=None, tau_min=None,
-                 tau_max=None, alpha=1, beta=4, plotter=None):
+    cdef float[:,:] edge_weights, pheremones
+    cdef float rho, tau_min, tau_max, alpha, beta, opt, best_value
+    cdef int n
+    cdef object plotter
+    cdef list best_tour, all_nodes, all_edges
 
-        self.edge_weights = np.matrix(adjacency_matrix)
-        self.opt = opt
+    def __init__(self, np.ndarray adjacency_matrix, opt, rho=None, tau_min=None, 
+                 tau_max=None, alpha=1.0, beta=4.0, object plotter=None):
+        n = len(adjacency_matrix)
+        self.edge_weights = adjacency_matrix
+        self.n = self.edge_weights.shape[0]
+        self.pheremones = np.empty([n, n], dtype=np.float32)
 
         # Init default values
-        n = len(adjacency_matrix)
         self.rho = 1/n if not rho else rho
         self.tau_min = 1/(n*n) if not tau_min else tau_min
         self.tau_max = 1 - 1/n if not tau_max else tau_max
         self.alpha = alpha
         self.beta = beta
+        self.n = n
 
         self.plotter = plotter
 
-        self.pheremones = {}
         self.best_tour = None
         self.best_value = sys.maxsize
-        self.n = self.edge_weights.shape[0]
 
-        self.all_nodes = range(self.n)
+        self.all_nodes = list(range(self.n))
         self.all_edges = list(it.combinations(self.all_nodes, 2))
 
     @classmethod
@@ -43,7 +53,7 @@ class MMAS:
             points = parse_points(data_file)
         except ValueError:
             # Cannot display points in plot, so no plot needed
-            print("Cannot parse point from file. No polt possible.")
+            print("Cannot parse point from file. No plot possible.")
             use_plotter = False
 
         n = len(mat)
@@ -51,13 +61,13 @@ class MMAS:
             plotter = TspPlotter(points, TspPlotter.nodes2tour(tour))
         else:
             plotter = None
+        mat = np.asmatrix(mat, dtype=np.float32)
         return MMAS(mat, opt, plotter=plotter)
 
     def run(self):
         self.init_pheremones()
-        counter = 0
-        print('Optimum: %f\n' % self.opt)
-
+        cdef int counter = 0
+        print('Optimum: %d' % self.opt)
         while self.best_value > self.opt:
             for i in range(4):
                 tour, value = self.construct()
@@ -78,14 +88,16 @@ class MMAS:
 
         return self.best_tour, self.best_value, counter
 
-    def construct(self):
-        vertex = start_vertex = np.random.choice(self.all_nodes)
-        unvisited = set(self.all_nodes)
+    cdef tuple construct(self):
+        cdef int vertex = np.random.choice(self.all_nodes)
+        cdef int start_vertex = vertex
+        cdef set unvisited = set(self.all_nodes)
         unvisited.remove(vertex)
 
-        tour = []
-        value = 0
+        cdef list tour = []
+        cdef float value = 0
 
+        cdef int old_vertex, i
         for i in range(self.n - 1):
             old_vertex = vertex
             vertex = self.chose_next(vertex, unvisited)
@@ -97,46 +109,65 @@ class MMAS:
         value += self.edge_weights[vertex, start_vertex]
         return tour, value
 
-    def chose_next(self, vertex, unvisited):
-        R = 0
-        probs = []
-        unvisited = list(unvisited)
-        for j in unvisited:
-            tau = self.get_pheromone(vertex, j)
-            weight = float(self.edge_weights[vertex, j])
+    cdef int chose_next(self, int vertex, set unvisited_set):
+        cdef float R = 0
+        cdef int n = len(unvisited_set)
+        cdef np.ndarray[np.int_t] unvisited = np.array(list(unvisited_set), dtype=np.int)
+        cdef np.ndarray[np.float32_t, ndim=1] probs = np.empty(n, dtype=np.float32)
+
+        cdef float tau
+        cdef float weight
+        cdef float prob
+        cdef int i, other_vertex
+        for i in range(n):
+            other_vertex = unvisited[i]
+            tau = self.get_pheromone(vertex, other_vertex)
+            weight = self.edge_weights[vertex, other_vertex]
             prob = tau**self.alpha * weight**(-self.beta)
             R += prob
-            probs.append(prob)
-
-        probs = [prob / R for prob in probs]
+            probs[i] = prob
+        
+        cdef int j
+        for j in range(n):
+            probs[j] /= R 
 
         return np.random.choice(unvisited, p=probs)
 
-    def edge_id(self, i, j):
+    cdef tuple edge_id(self, int i, int j):
         if j < i:
             (i, j) = (j, i)
-        # return self.n * i + j
         return (i, j)
 
-    def get_pheromone(self, i, j):
-        return self.pheremones[self.edge_id(i, j)]
+    cdef float get_pheromone(self, int i, int j):
+        cdef int tmp
+        if j < i:
+            tmp = i
+            i = j
+            j = tmp
+        return self.pheremones[i, j]
 
-    def set_pheromone(self, value, i, j):
-        self.pheremones[self.edge_id(i, j)] = value
+    cdef set_pheromone(self, float value, int i, int j):
+        cdef int tmp
+        if j < i:
+            tmp = i
+            i = j
+            j = tmp
+        self.pheremones[i, j] = value
 
-    def init_pheremones(self):
-        value = 1 / self.n
+    cdef init_pheremones(self):
+        cdef float value = 1 / self.n
         for edge in self.all_edges:
-            self.set_pheromone(value, *edge)
+            self.set_pheromone(value, edge[0], edge[1])
 
-    def update_pheremones(self, tour):
-        tour_edge_ids = set(self.edge_id(*edge) for edge in tour)
+    cdef update_pheremones(self, list tour):
+        tour_edge_ids = set(self.edge_id(edge[0], edge[1]) for edge in tour)
+        cdef float current_tau
+        cdef float new_tau
         for edge in self.all_edges:
-            current_tau = self.get_pheromone(*edge)
-            new_tau = None
-            if self.edge_id(*edge) in tour_edge_ids:
+            current_tau = self.get_pheromone(edge[0], edge[1])
+            if self.edge_id(edge[0], edge[1]) in tour_edge_ids:
                 new_tau = min((1 - self.rho) * current_tau + self.rho,
                               self.tau_max)
             else:
                 new_tau = max((1 - self.rho) * current_tau, self.tau_min)
-            self.set_pheromone(new_tau, *edge)
+            self.set_pheromone(new_tau, edge[0], edge[1])
