@@ -3,7 +3,7 @@ import sys
 import random
 import itertools as it
 
-from cpython cimport array
+from cpython cimport array, bool
 import array
 
 import numpy as np
@@ -21,21 +21,21 @@ cdef class MMAS:
     cdef object plotter
     cdef list best_tour, all_nodes, all_edges
 
-    def __init__(self, np.ndarray adjacency_matrix, opt, rho=None, tau_min=None, 
+    def __init__(self, np.ndarray adjacency_matrix, opt, rho=None, tau_min=None,
                  tau_max=None, alpha=1.0, beta=4.0, object plotter=None, goal_deviation=0):
+
         n = len(adjacency_matrix)
         self.edge_weights = adjacency_matrix
         self.opt = opt
-        self.n = self.edge_weights.shape[0]
+        self.n = n
         self.pheremones = np.empty([n, n], dtype=np.float32)
 
         # Init default values
-        self.rho = 1/n if not rho else rho
-        self.tau_min = 1/(n*n) if not tau_min else tau_min
-        self.tau_max = 1 - 1/n if not tau_max else tau_max
+        self.rho = 1.0/n if not rho else rho
+        self.tau_min = 1.0/(n*n) if not tau_min else tau_min
+        self.tau_max = 1 - 1.0/n if not tau_max else tau_max
         self.alpha = alpha
         self.beta = beta
-        self.n = n
 
         self.plotter = plotter
 
@@ -73,8 +73,15 @@ cdef class MMAS:
         return MMAS(mat, opt, plotter=plotter, goal_deviation=goal_deviation)
 
     def run(self):
-        self.init_pheremones()
         cdef int counter = 0
+
+        cdef int last_improve = 0
+        cdef int adapt_diff
+        cdef bool need_adapt = False
+        cdef int adapt_limit = 1000
+
+        self.init_pheremones()
+
         print('Optimum: %f' % self.opt)
         while MMAS.get_deviation(self.opt, self.best_value) * 100 > self.goal_deviation:
             for i in range(4):
@@ -82,16 +89,23 @@ cdef class MMAS:
                 if value < self.best_value:
                     self.best_tour = tour
                     self.best_value = value
+                    last_improve = counter
+                    self.reset_tau()
+
+            # Check how long we haven't improved
+            adapt_diff = counter - last_improve
+            need_adapt =  (adapt_diff >= adapt_limit and
+                            adapt_diff % adapt_limit == 0)
+            if need_adapt:
+                self.adapt_tau(adapt_diff // adapt_limit)
+
             self.update_pheremones(self.best_tour)
             counter += 1
+
             if counter % 1000 == 0:
-                print('Iterations: %d  Current opt: %f' % (
-                      counter, self.best_value))
-                if self.plotter is not None:
-                    self.plotter.plot_solution(self.best_tour)
-                    self.plotter.plot_pheremones(self.all_edges,
-                                                 self.pheremones)
-            if counter == 10000:
+                self.print_status(counter)
+
+            if counter == 100000:
                 break
 
         return self.best_tour, self.best_value, counter
@@ -134,10 +148,10 @@ cdef class MMAS:
             prob = tau**self.alpha * weight**(-self.beta)
             R += prob
             probs[i] = prob
-        
+
         cdef int j
         for j in range(n):
-            probs[j] /= R 
+            probs[j] /= R
 
         return np.random.choice(unvisited, p=probs)
 
@@ -179,3 +193,21 @@ cdef class MMAS:
             else:
                 new_tau = max((1 - self.rho) * current_tau, self.tau_min)
             self.set_pheromone(new_tau, edge[0], edge[1])
+
+    cdef print_status(self, int counter):
+        print('Iterations: %d  Current opt: %f' % (counter, self.best_value))
+        if self.plotter is not None:
+            self.plotter.plot_solution(self.best_tour)
+            self.plotter.plot_pheremones(self.all_edges, self.pheremones)
+
+    cdef reset_tau(self):
+        self.tau_min = 1.0 / (self.n * self.n)
+        self.tau_max = 1 - (1.0 / self.n)
+
+    cdef adapt_tau(self, int weight):
+        # Adapt tau_min/max by weight of unimproved iterations
+        #print("tau_min before {}, tau_max before {}".format(self.tau_min, self.tau_max))
+        #self.tau_min = (1.0 + weight**2) / (self.n * self.n)
+        #self.tau_max = 1 - ((1.0 + weight) / self.n)
+        #print("tau_min after {}, tau_max after {}".format(self.tau_min, self.tau_max))
+        pass

@@ -59,7 +59,7 @@ class TspPlotter:
         self.plot_points(self.ax3)
         for edge in edges:
             pheremone = pheremones[edge]
-            self.plot_arrow(self.ax3, edge, width=min(pheremone*100, 1))
+            self.plot_arrow(self.ax3, edge, width=min(pheremone*10, 1))
         plt.draw()
         plt.pause(1)
 
