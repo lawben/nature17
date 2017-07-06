@@ -41,10 +41,10 @@ def parse_points(data_file):
 def parse_full_matrix(raw_data, matrix_start, dimension):
     matrix = []
     for i in range(matrix_start, matrix_start + dimension):
-        data_row = [int(x) for x in raw_data[i].split()]
+        data_row = [float(x) for x in raw_data[i].split()]
         matrix.append(data_row)
 
-    return matrix
+    return np.array(matrix)
 
 
 def parse_lower_diag_row(raw_data, matrix_start):
