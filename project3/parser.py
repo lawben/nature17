@@ -98,7 +98,8 @@ def parse_node_coords(raw_data, matrix_start, dimension):
         for j in range(i, n):
             x2, y2 = points[j]
             dist = math.sqrt((x1 - x2)**2 + (y1 - y2)**2)
-            matrix[i, j] = matrix[j, i] = dist
+            normalised_dist = int(dist + 0.5)
+            matrix[i, j] = matrix[j, i] = normalised_dist
 
     return matrix
 
@@ -135,7 +136,13 @@ def parse_tour(data_file):
 
     tour = []
     for i in range(tour_start, tour_start + dimension):
-        tour.append(get_int_from_line(raw_data[i]) - 1)
+        line = raw_data[i]
+        if "EOF" in line:
+            break
+
+        tour_row = [int(x) for x in line.split()]
+        for node in tour_row:
+            tour.append(node - 1)
 
     return tour
 
