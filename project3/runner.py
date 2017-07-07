@@ -12,17 +12,8 @@ def notify(msg):
     os.system("ntfy -b telegram send '{}'".format(msg))
 
 
-def main(args):
-    # Run in parallel
-    if args.parallel:
-        return run_parallel(args.tsp_file)
-
-    data_file = args.tsp_file
-    should_notify = args.notify
-    goal = float(args.goal)
-    tour_file = data_file[:-4] + ".opt"
-
-    solver = MMAS.of(data_file, tour_file, not args.no_plot, goal)
+def run_single(args, data_file, tour_file):
+    solver = MMAS.of(data_file, tour_file, not args.no_plot, args.goal)
     tsp_res = solver.run()
 
     outputs = ["Tour: " + tsp_res.str_tour,
@@ -30,10 +21,25 @@ def main(args):
                "Iterations: " + str(tsp_res.iterations)]
     print("\n".join(outputs))
 
-    if should_notify:
+    if args.notify:
         message = ("Goal Deviation of {0:.0f}% reached for file {1:s} after"
                    "{2:0d} iterations\n")
-        notify(message.format(goal, data_file, tsp_res.iterations))
+        notify(message.format(args.goal, data_file, tsp_res.iterations))
+
+
+def main(args):
+    print("\nWelcome to ANT WORLD!")
+    print("=====================\n")
+
+    # Run in parallel
+    if args.parallel:
+        return run_parallel(args.tsp_file, args.iterations)
+
+    data_file = args.tsp_file
+    goal = float(args.goal)
+    tour_file = data_file[:-4] + ".opt"
+    for i in range(args.iterations):
+        run_single(args, data_file, tour_file)
 
 
 if __name__ == '__main__':
@@ -41,8 +47,9 @@ if __name__ == '__main__':
     parser.add_argument("-f", "--tsp_file", required=True)
     parser.add_argument("--no-plot", action='store_true')
     parser.add_argument("--notify", action='store_true')
-    parser.add_argument("-g", "--goal", default=0)
+    parser.add_argument("-g", "--goal", default=0, type=int)
     parser.add_argument("--parallel", action="store_true")
+    parser.add_argument("-i", "--iterations", default=5, type=int)
 
     args = parser.parse_args()
     main(args)

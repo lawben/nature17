@@ -95,12 +95,9 @@ def parallel_runner(queue, result_files, locks):
         opt_tour = parser.parse_tour(files[1])
         opt = parser.get_opt(opt_tour, raw_matrix)
 
-        if "goal" not in params:
-            goal = 0
-
         # Make sure this is always a float matrix
         matrix = np.asmatrix(raw_matrix, dtype=np.float32)
-        mmas = MMAS(matrix, opt, goal=0, **params)
+        mmas = MMAS(matrix, opt, **params)
         res = mmas.run()
         res.exec_number = exec_number
 
@@ -117,7 +114,7 @@ def parallel_runner(queue, result_files, locks):
         lock.release()
 
 
-def run_parallel(data_path, iterations=5, params=None):
+def run_parallel(data_path, iterations, params=None):
     if params is None:
         params = [{}]
 
@@ -126,7 +123,7 @@ def run_parallel(data_path, iterations=5, params=None):
     result_files = {inst: setup_run(inst) for inst, _ in instances}
     locks = {inst: Lock() for inst, _ in instances}
 
-    instance_queue = parallel_setup(instances, 10, params)
+    instance_queue = parallel_setup(instances, iterations, params)
 
     num_processes = cpu_count()
     pool = Pool(num_processes, parallel_runner,

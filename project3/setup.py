@@ -5,7 +5,7 @@ from Cython.Distutils import build_ext
 import numpy
 
 ext_modules = [Extension("mmas", ["mmas.pyx"], libraries=["m"],
-                         extra_compile_args=["-ffast-math"],
+                         extra_compile_args=["-ffast-math", "-w"],
                          include_dirs=[numpy.get_include()])]
 
 setup(
