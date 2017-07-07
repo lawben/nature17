@@ -17,8 +17,7 @@ from tsp_result import TSPResult
 cdef class MMAS:
 
     cdef float[:,:] edge_weights, pheremones
-    cdef float rho, tau_min, tau_max, alpha, beta, opt
-    cdef double best_value
+    cdef float rho, tau_min, tau_max, alpha, beta, opt, best_value
     cdef int n, goal
     cdef object plotter
     cdef list best_tour, all_nodes, all_edges
@@ -78,7 +77,7 @@ cdef class MMAS:
 
     def run(self):
         cdef int counter = 0
-        cdef double value = 0.0
+        cdef float value = 0.0
 
         cdef int last_improve = 0
         cdef int adapt_diff
