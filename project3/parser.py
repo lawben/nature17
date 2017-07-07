@@ -39,10 +39,12 @@ def parse_points(data_file):
 
 
 def parse_full_matrix(raw_data, matrix_start, dimension):
-    matrix = []
-    for i in range(matrix_start, matrix_start + dimension):
-        data_row = [int(x) for x in raw_data[i].split()]
-        matrix.append(data_row)
+    matrix = np.empty((dimension, dimension))
+    for row_num in range(matrix_start, matrix_start + dimension):
+        i = row_num - matrix_start
+        data_row = [float(x) for x in raw_data[row_num].split()]
+        for j in range(len(data_row)):
+            matrix[i, j] = matrix[j, i] = data_row[j]
 
     return matrix
 

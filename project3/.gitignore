@@ -5,6 +5,8 @@ mmas.html
 *.so
 build
 
+results/
+
 
 # Mac stuff
 .vscode/

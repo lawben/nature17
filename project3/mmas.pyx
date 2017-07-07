@@ -11,18 +11,19 @@ cimport numpy as np
 
 from parser import parse, parse_tour, parse_points, get_opt
 from plot_tsp import TspPlotter
+from tsp_result import TSPResult
 
 
 cdef class MMAS:
 
     cdef float[:,:] edge_weights, pheremones
     cdef float rho, tau_min, tau_max, alpha, beta, opt, best_value
-    cdef int n, goal_deviation
+    cdef int n, goal
     cdef object plotter
     cdef list best_tour, all_nodes, all_edges
 
     def __init__(self, np.ndarray adjacency_matrix, opt, rho=None, tau_min=None,
-                 tau_max=None, alpha=1.0, beta=4.0, object plotter=None, goal_deviation=0):
+                 tau_max=None, alpha=1.0, beta=4.0, object plotter=None, goal=0):
 
         n = len(adjacency_matrix)
         self.edge_weights = adjacency_matrix
@@ -40,11 +41,13 @@ cdef class MMAS:
         self.plotter = plotter
 
         self.best_tour = None
-        self.best_value = float('inf')
+        self.best_value = float(sys.maxsize)
 
         self.all_nodes = list(range(self.n))
         self.all_edges = list(it.combinations(self.all_nodes, 2))
-        self.goal_deviation = goal_deviation
+        self.goal = goal
+
+        np.random.seed(random.randint(0, 2**32 - 1))
 
     @classmethod
     def get_deviation(cls, opt, best_value):
@@ -53,7 +56,7 @@ cdef class MMAS:
         return (best_value - opt) / opt
 
     @classmethod
-    def of(cls, data_file, tour_file, use_plotter=True, goal_deviation=0):
+    def of(cls, data_file, tour_file, use_plotter=True, goal=0):
         mat = parse(data_file)
         tour = parse_tour(tour_file)
         opt = get_opt(tour, mat)
@@ -70,10 +73,11 @@ cdef class MMAS:
         else:
             plotter = None
         mat = np.asmatrix(mat, dtype=np.float32)
-        return MMAS(mat, opt, plotter=plotter, goal_deviation=goal_deviation)
+        return MMAS(mat, opt, plotter=plotter, goal=goal)
 
     def run(self):
         cdef int counter = 0
+        cdef float value = 0.0
 
         cdef int last_improve = 0
         cdef int adapt_diff
@@ -82,8 +86,7 @@ cdef class MMAS:
 
         self.init_pheremones()
 
-        print('Optimum: %f' % self.opt)
-        while MMAS.get_deviation(self.opt, self.best_value) * 100 > self.goal_deviation:
+        while MMAS.get_deviation(self.opt, self.best_value) * 100 > self.goal:
             for i in range(4):
                 tour, value = self.construct()
                 if value < self.best_value:
@@ -105,10 +108,16 @@ cdef class MMAS:
             if counter % 1000 == 0:
                 self.print_status(counter)
 
-            if counter == 100000:
+            if counter == 10000:
                 break
 
-        return self.best_tour, self.best_value, counter
+        # Make sure original tau values are passed on
+        self.reset_tau()
+
+        tsp_res = TSPResult(self.opt, self.best_tour, self.best_value, counter,
+                            self.rho, self.tau_min, self.tau_max, self.alpha,
+                            self.beta, self.goal)
+        return tsp_res
 
     cdef tuple construct(self):
         cdef int vertex = np.random.choice(self.all_nodes)
@@ -195,7 +204,9 @@ cdef class MMAS:
             self.set_pheromone(new_tau, edge[0], edge[1])
 
     cdef print_status(self, int counter):
-        print('Iterations: %d  Current opt: %f' % (counter, self.best_value))
+        print('Iterations: %d  - Current opt: %f - opt: %f - Deviation: %f' % (
+              counter, self.best_value, self.opt,
+              self.get_deviation(self.opt, self.best_value)))
         if self.plotter is not None:
             self.plotter.plot_solution(self.best_tour)
             self.plotter.plot_pheremones(self.all_edges, self.pheremones)
