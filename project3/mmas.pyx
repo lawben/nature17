@@ -17,7 +17,8 @@ from tsp_result import TSPResult
 cdef class MMAS:
 
     cdef float[:,:] edge_weights, pheremones
-    cdef float rho, tau_min, tau_max, alpha, beta, opt, best_value
+    cdef float rho, tau_min, tau_max, alpha, beta, opt
+    cdef double best_value
     cdef int n, goal
     cdef object plotter
     cdef list best_tour, all_nodes, all_edges
@@ -41,11 +42,13 @@ cdef class MMAS:
         self.plotter = plotter
 
         self.best_tour = None
-        self.best_value = float('inf')
+        self.best_value = float(sys.maxsize)
 
         self.all_nodes = list(range(self.n))
         self.all_edges = list(it.combinations(self.all_nodes, 2))
         self.goal = goal
+
+        np.random.seed(random.randint(0, 2**32 - 1))
 
     @classmethod
     def get_deviation(cls, opt, best_value):
@@ -75,6 +78,7 @@ cdef class MMAS:
 
     def run(self):
         cdef int counter = 0
+        cdef double value = 0.0
 
         cdef int last_improve = 0
         cdef int adapt_diff
@@ -83,7 +87,6 @@ cdef class MMAS:
 
         self.init_pheremones()
 
-        print('Optimum: %f' % self.opt)
         while MMAS.get_deviation(self.opt, self.best_value) * 100 > self.goal:
             for i in range(4):
                 tour, value = self.construct()
@@ -106,7 +109,7 @@ cdef class MMAS:
             if counter % 1000 == 0:
                 self.print_status(counter)
 
-            if counter == 1000:
+            if counter == 10000:
                 break
 
         # Make sure original tau values are passed on
@@ -202,7 +205,9 @@ cdef class MMAS:
             self.set_pheromone(new_tau, edge[0], edge[1])
 
     cdef print_status(self, int counter):
-        print('Iterations: %d  Current opt: %f' % (counter, self.best_value))
+        print('Iterations: %d  - Current opt: %f - opt: %f - Deviation: %f' % (
+              counter, self.best_value, self.opt,
+              self.get_deviation(self.opt, self.best_value)))
         if self.plotter is not None:
             self.plotter.plot_solution(self.best_tour)
             self.plotter.plot_pheremones(self.all_edges, self.pheremones)

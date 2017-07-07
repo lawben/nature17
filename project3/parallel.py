@@ -4,6 +4,8 @@ from multiprocessing import Pool, Queue, Lock, cpu_count
 from queue import Empty as QEmpty
 import os
 
+import numpy as np
+
 import parser
 from mmas import MMAS
 
@@ -33,7 +35,8 @@ def parse_files(files):
         instance_path = os.path.join(file_dir, os.path.dirname(f))
         instance_name = os.path.basename(f)[:-4]
         opt_file = os.path.join(instance_path, instance_name + ".opt")
-        instance_files = (f, opt_file)
+        tsp_file = os.path.join(file_dir, f)
+        instance_files = (tsp_file, opt_file)
         pairs.append((instance_name, instance_files))
 
     return pairs
@@ -52,7 +55,7 @@ def parse_data_dir(data_dir):
 
 def get_instance_files(data_path):
     if "," in data_path:
-        files = data_path.split()
+        files = data_path.split(",")
         return parse_files(files)
 
     if os.path.isfile(data_path):
@@ -87,14 +90,15 @@ def parallel_runner(queue, result_files, locks):
 
         exec_number, inst, files, params = config
 
-        matrix = parser.parse(files[0])
+        raw_matrix = parser.parse(files[0])
         opt_tour = parser.parse_tour(files[1])
-        opt = parser.get_opt(opt_tour, matrix)
+        opt = parser.get_opt(opt_tour, raw_matrix)
 
         if "goal" not in params:
             goal = 0
 
-        # Execute TSP instance multiple times
+        # Make sure this is always a float matrix
+        matrix = np.asmatrix(raw_matrix, dtype=np.float32)
         mmas = MMAS(matrix, opt, goal=0, **params)
         res = mmas.run()
         res.exec_number = exec_number

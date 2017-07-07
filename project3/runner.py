@@ -15,7 +15,7 @@ def notify(msg):
 def main(args):
     # Run in parallel
     if args.parallel:
-        run_parallel(args.tsp_file)
+        return run_parallel(args.tsp_file)
 
     data_file = args.tsp_file
     should_notify = args.notify
