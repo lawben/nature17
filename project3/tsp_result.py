@@ -1,6 +1,6 @@
 class TSPResult:
     def __init__(self, opt, tour, result, iterations, rho, tau_min,
-                 tau_max, alpha, beta, goal, exec_number=-1):
+                 tau_max, alpha, beta, goal, exec_number=-1, iteration=-1):
 
         self.opt = opt
         self.tour = tour
@@ -13,6 +13,7 @@ class TSPResult:
         self.beta = beta
         self.goal = goal
         self.exec_number = exec_number
+        self.iteration = iteration
 
         self.str_tour = self.build_str_tour()
 
@@ -25,6 +26,7 @@ class TSPResult:
         return "-".join(tour)
 
     def to_csv(self):
-        str_ = ("{exec_number},{opt},{str_tour},{result},{iterations},{goal},"
-                "{rho},{tau_min},{tau_max},{alpha},{beta}\n")
+        str_ = ("{exec_number},{iteration},{opt},{str_tour},{result},"
+                "{iterations},{goal},{rho},{tau_min},{tau_max},{alpha},{beta}"
+                "\n")
         return str_.format(**self.__dict__)

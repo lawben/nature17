@@ -22,8 +22,8 @@ def run_single(args, data_file, tour_file):
     print("\n".join(outputs))
 
     if args.notify:
-        message = ("Goal Deviation of {0:.0f}% reached for file {1:s} after"
-                   "{2:0d} iterations\n")
+        message = ("Goal Deviation of {0:.0f}% reached for file {1:s} after "
+                   "{2:0d} iterations")
         notify(message.format(args.goal, data_file, tsp_res.iterations))
 
 
@@ -33,7 +33,8 @@ def main(args):
 
     # Run in parallel
     if args.parallel:
-        return run_parallel(args.tsp_file, args.iterations)
+        notify_fn = notify if args.notify else print
+        return run_parallel(args.tsp_file, args.iterations, notify_fn)
 
     data_file = args.tsp_file
     goal = float(args.goal)

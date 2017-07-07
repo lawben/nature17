@@ -121,7 +121,7 @@ cdef class MMAS:
             need_adapt =  (adapt_diff >= adapt_limit and
                             adapt_diff % adapt_limit == 0)
 
-            if adapt_diff >= 50000:
+            if adapt_diff >= 5000:
                 # Restart
                 self.init_pheremones()
 
@@ -137,7 +137,7 @@ cdef class MMAS:
             if counter % 1000 == 0:
                 self.print_status(counter)
 
-            if counter == 100000:
+            if counter == 1000:
                 break
 
         tsp_res = TSPResult(self.opt, self.best_tour, self.best_value, counter,

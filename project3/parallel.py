@@ -70,26 +70,27 @@ def get_instance_files(data_path):
 
 def parallel_setup(instances, iterations, params):
     queue = Queue()
-    exec_number = 0
+
     for inst, files in instances:
+        exec_number = 0
         for param in params:
-            for _ in range(iterations):
-                run_config = (exec_number, inst, files, param)
+            for iter in range(iterations):
+                run_config = (exec_number, iter, inst, files, param)
                 queue.put(run_config)
             exec_number += 1
 
     return queue
 
 
-def parallel_runner(queue, result_files, locks):
-    log_fmt = "{} - [{}] - OPT: {} - RESULT: {} - ITERATIONS: {} - GOAL: {}%"
+def parallel_runner(queue, result_files, locks, notify_fn):
+    log_fmt = "{} - [{} - {}] - OPT: {} - RESULT: {} - ITERATIONS: {} - GOAL: {}%"
     while True:
         try:
             config = queue.get(block=False, timeout=1)
         except QEmpty:
             return
 
-        exec_number, inst, files, params = config
+        exec_number, iter, inst, files, params = config
 
         raw_matrix = parser.parse(files[0])
         opt_tour = parser.parse_tour(files[1])
@@ -100,8 +101,9 @@ def parallel_runner(queue, result_files, locks):
         mmas = MMAS(matrix, opt, **params)
         res = mmas.run()
         res.exec_number = exec_number
+        res.iteration = iter
 
-        log = log_fmt.format(datetime.now(), inst, opt, res.result,
+        log = log_fmt.format(datetime.now(), inst, iter, opt, res.result,
                              res.iterations, res.goal)
 
         res_line = res.to_csv()
@@ -113,8 +115,15 @@ def parallel_runner(queue, result_files, locks):
             res_f.write(res_line)
         lock.release()
 
+        if MMAS.get_deviation(res.opt, res.result) * 100 <= res.goal:
+            msg = ("Goal Deviation of {0:.0f}% reached for file {1:s} after "
+                   "{2:0d} iterations. Result in {3} with exec_number {4} in "
+                   "iteration {5}")
+            notify_fn(msg.format(res.goal, files[0], res.iterations, res_file,
+                                 exec_number, iter))
 
-def run_parallel(data_path, iterations, params=None):
+
+def run_parallel(data_path, iterations, notify_fn, params=None):
     if params is None:
         params = [{}]
 
@@ -127,7 +136,7 @@ def run_parallel(data_path, iterations, params=None):
 
     num_processes = cpu_count()
     pool = Pool(num_processes, parallel_runner,
-                (instance_queue, result_files, locks))
+                (instance_queue, result_files, locks, notify_fn))
 
     pool.close()
     pool.join()
