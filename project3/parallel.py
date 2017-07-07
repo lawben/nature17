@@ -43,14 +43,15 @@ def parse_files(files):
 
 
 def parse_data_dir(data_dir):
-    files = []
+    file_dir = os.path.dirname(__file__)
+    inst_files = []
     for (dirpath, _, files) in os.walk(data_dir):
         for f in sorted(files):
             if f.endswith(".tsp"):
-                tsp_file_path = os.path.join(dirpath, f)
-                files.append(tsp_file_path)
+                tsp_file_path = os.path.join(file_dir, dirpath, f)
+                inst_files.append(tsp_file_path)
 
-    return parse_files(files)
+    return parse_files(inst_files)
 
 
 def get_instance_files(data_path):
