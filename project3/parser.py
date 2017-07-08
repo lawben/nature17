@@ -39,10 +39,10 @@ def parse_points(data_file):
 
 
 def parse_full_matrix(raw_data, matrix_start, dimension):
-    matrix = np.empty((dimension, dimension))
+    matrix = np.empty((dimension, dimension), dtype=np.integer)
     for row_num in range(matrix_start, matrix_start + dimension):
         i = row_num - matrix_start
-        data_row = [float(x) for x in raw_data[row_num].split()]
+        data_row = [int(x) for x in raw_data[row_num].split()]
         for j in range(len(data_row)):
             matrix[i, j] = matrix[j, i] = data_row[j]
 
@@ -55,10 +55,10 @@ def parse_lower_diag_row(raw_data, matrix_start):
     row = []
     for i in range(matrix_start, len(raw_data)):
         line = raw_data[i]
-        if "EOF" in line:
+        if "EOF" in line or "DISPLAY_DATA_SECTION" in line:
             break
 
-        file_row = [float(x) for x in line.split()]
+        file_row = [int(x) for x in line.split()]
         for val in file_row:
             row.append(val)
             if val == 0:
@@ -67,7 +67,7 @@ def parse_lower_diag_row(raw_data, matrix_start):
 
     n = len(raw_matrix)
 
-    matrix = np.empty((n, n))
+    matrix = np.empty((n, n), dtype=np.integer)
     for i in range(n):
         dist_row = raw_matrix[i]
         for j in range(i + 1):
@@ -87,21 +87,65 @@ def parse_matrix(raw_data, matrix_start, dimension):
     raise ValueError("File does not contain matrix!")
 
 
-def parse_node_coords(raw_data, matrix_start, dimension):
-    points = parse_node_points(raw_data, matrix_start, dimension)
+def nint(val):
+    return int(val + 0.5)
 
+
+def calc_euclidian(points):
     n = len(points)
-    matrix = np.empty((n, n))
+    matrix = np.empty((n, n), dtype=np.integer)
 
     for i in range(n):
         x1, y1 = points[i]
         for j in range(i, n):
             x2, y2 = points[j]
             dist = math.sqrt((x1 - x2)**2 + (y1 - y2)**2)
-            normalised_dist = int(dist + 0.5)
-            matrix[i, j] = matrix[j, i] = normalised_dist
+            matrix[i, j] = matrix[j, i] = nint(dist)
 
     return matrix
+
+
+def calc_lon_lat(x):
+    PI = 3.141592
+    deg = int(x)
+    min_ = x - deg
+    return PI * (deg + 5.0 * min_ / 3.0) / 180.0
+
+
+def calc_geo_dist(points):
+    n = len(points)
+    matrix = np.empty((n, n), dtype=np.integer)
+
+    RRR = 6378.388
+
+    for i in range(n):
+        x1, y1 = points[i]
+        lat1 = calc_lon_lat(x1)
+        lon1 = calc_lon_lat(y1)
+
+        for j in range(i, n):
+            x2, y2 = points[j]
+            lat2 = calc_lon_lat(x2)
+            lon2 = calc_lon_lat(y2)
+
+            q1 = math.cos(lon1 - lon2)
+            q2 = math.cos(lat1 - lat2)
+            q3 = math.cos(lat1 + lat2)
+            dist = int(RRR * math.acos(0.5*((1.0+q1)*q2 - (1.0-q1)*q3)) + 1.0)
+
+            matrix[i, j] = matrix[j, i] = dist
+
+    return matrix
+
+
+def parse_node_coords(raw_data, matrix_start, dimension):
+    points = parse_node_points(raw_data, matrix_start, dimension)
+
+    for line in raw_data:
+        if "EUC_2D" in line:
+            return calc_euclidian(points)
+        if "GEO" in line:
+            return calc_geo_dist(points)
 
 
 def parse(data_file):
@@ -137,7 +181,7 @@ def parse_tour(data_file):
     tour = []
     for i in range(tour_start, tour_start + dimension):
         line = raw_data[i]
-        if "EOF" in line:
+        if "EOF" in line or "-1" in line:
             break
 
         tour_row = [int(x) for x in line.split()]
