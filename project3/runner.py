@@ -1,21 +1,13 @@
-import os
 from argparse import ArgumentParser
-from itertools import product
 
 from mmas import MMAS
-import parser
-from plot_tsp import TspPlotter
-from parallel import run_parallel
-
-
-def notify(msg):
-    os.system("ntfy -b telegram send '{}'".format(msg))
+from parallel import run_parallel, notify
 
 
 def main(args):
     # Run in parallel
     if args.parallel:
-        return run_parallel(args.tsp_file)
+        return run_parallel(args.tsp_file, args=args)
 
     data_file = args.tsp_file
     should_notify = args.notify

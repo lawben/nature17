@@ -1,16 +1,18 @@
+import os
+import parser
 from datetime import datetime
-from functools import partial
 from multiprocessing import Pool, Queue, Lock, cpu_count
 from queue import Empty as QEmpty
-import os
 
 import numpy as np
-
-import parser
 from mmas import MMAS
 
 FILE_DIR = os.path.dirname(__file__)
 RESULT_DIR = os.path.join(FILE_DIR, "results")
+
+
+def notify(msg):
+    os.system("ntfy -b telegram send '{}'".format(msg))
 
 
 def setup_run(tsp_instance):
@@ -68,13 +70,13 @@ def get_instance_files(data_path):
     raise ValueError("Need one of data_dir or file(s)!")
 
 
-def parallel_setup(instances, iterations, params):
+def parallel_setup(instances, iterations, params, arg_list):
     queue = Queue()
     exec_number = 0
     for inst, files in instances:
         for param in params:
             for _ in range(iterations):
-                run_config = (exec_number, inst, files, param)
+                run_config = (exec_number, inst, files, param, arg_list)
                 queue.put(run_config)
             exec_number += 1
 
@@ -89,18 +91,18 @@ def parallel_runner(queue, result_files, locks):
         except QEmpty:
             return
 
-        exec_number, inst, files, params = config
+        exec_number, inst, files, params, arg_list = config
 
         raw_matrix = parser.parse(files[0])
         opt_tour = parser.parse_tour(files[1])
         opt = parser.get_opt(opt_tour, raw_matrix)
 
-        if "goal" not in params:
-            goal = 0
+        goal = int(arg_list['goal'])
+        tsp_file = arg_list['tsp_file']
 
         # Make sure this is always a float matrix
         matrix = np.asmatrix(raw_matrix, dtype=np.float32)
-        mmas = MMAS(matrix, opt, goal=0, **params)
+        mmas = MMAS(matrix, opt, goal=goal, **params)
         res = mmas.run()
         res.exec_number = exec_number
 
@@ -116,17 +118,23 @@ def parallel_runner(queue, result_files, locks):
             res_f.write(res_line)
         lock.release()
 
+        should_notify = arg_list['notify']
+        if should_notify is not None and should_notify:
+            message = "Goal Deviation of {0:.0f}% reached for {1:s} after {2:0d} iterations\n"
+            notify(message.format(goal, tsp_file, res.iterations))
 
-def run_parallel(data_path, iterations=5, params=None):
+
+def run_parallel(data_path, params=None, args=None):
     if params is None:
         params = [{}]
+    arg_list = vars(args)
 
     instances = get_instance_files(data_path)
 
     result_files = {inst: setup_run(inst) for inst, _ in instances}
     locks = {inst: Lock() for inst, _ in instances}
 
-    instance_queue = parallel_setup(instances, 10, params)
+    instance_queue = parallel_setup(instances, 10, params, arg_list)
 
     num_processes = cpu_count()
     pool = Pool(num_processes, parallel_runner,
