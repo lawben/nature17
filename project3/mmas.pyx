@@ -16,20 +16,24 @@ from tsp_result import TSPResult
 
 cdef class MMAS:
 
-    cdef float[:,:] edge_weights, pheremones
+    cdef float[:,:] edge_weights, pheromones
     cdef float rho, tau_min, tau_max, alpha, beta, opt, best_value
     cdef int n, goal
     cdef object plotter
-    cdef list best_tour, all_nodes, all_edges
+    cdef list best_tour, all_edges, all_edge_ids
+    cdef int[:] all_nodes
 
-    def __init__(self, np.ndarray adjacency_matrix, opt, rho=None, tau_min=None,
+    def __init__(self, adjacency_matrix, opt, rho=None, tau_min=None,
                  tau_max=None, alpha=1.0, beta=4.0, object plotter=None, goal=0):
 
         n = len(adjacency_matrix)
-        self.edge_weights = adjacency_matrix
-        self.opt = opt
+
+        cdef np.ndarray[np.float32_t, ndim=2, negative_indices=False, mode='c'] edge_weights_np = np.asarray(adjacency_matrix, dtype=np.float32)
+        self.edge_weights = edge_weights_np
         self.n = n
-        self.pheremones = np.empty([n, n], dtype=np.float32)
+        cdef np.ndarray[np.float32_t, ndim=2, negative_indices=False, mode='c'] pheromones_np = np.empty([n, n], dtype=np.float32)
+        self.pheromones = pheromones_np
+        self.opt = opt
 
         # Init default values
         self.rho = 1.0/n if not rho else rho
@@ -43,17 +47,12 @@ cdef class MMAS:
         self.best_tour = None
         self.best_value = float(sys.maxsize)
 
-        self.all_nodes = list(range(self.n))
+        cdef np.ndarray[np.int32_t, ndim=1, negative_indices=False, mode='c'] all_nodes_np = np.arange(self.n, dtype=np.int32)
+        self.all_nodes = all_nodes_np
         self.all_edges = list(it.combinations(self.all_nodes, 2))
         self.goal = goal
 
         np.random.seed(random.randint(0, 2**32 - 1))
-
-    @classmethod
-    def get_deviation(cls, opt, best_value):
-        """Return the deviation of the current score from the optimum.
-        Example: Optimum = 2000, Score = 3000 -> Deviation = 0.5"""
-        return (best_value - opt) / opt
 
     @classmethod
     def of(cls, data_file, tour_file, use_plotter=True, goal=0):
@@ -67,12 +66,10 @@ cdef class MMAS:
             print("Cannot parse points from file. No plot possible.")
             use_plotter = False
 
-        n = len(mat)
         if use_plotter:
             plotter = TspPlotter(points, TspPlotter.nodes2tour(tour))
         else:
             plotter = None
-        mat = np.asmatrix(mat, dtype=np.float32)
         return MMAS(mat, opt, plotter=plotter, goal=goal)
 
     def run(self):
@@ -84,9 +81,9 @@ cdef class MMAS:
         cdef bool need_adapt = False
         cdef int adapt_limit = 1000
 
-        self.init_pheremones()
+        self.init_pheromones()
 
-        while MMAS.get_deviation(self.opt, self.best_value) * 100 > self.goal:
+        while self.get_deviation(self.best_value) * 100 > self.goal:
             for i in range(4):
                 tour, value = self.construct()
                 if value < self.best_value:
@@ -102,7 +99,7 @@ cdef class MMAS:
             if need_adapt:
                 self.adapt_tau(adapt_diff // adapt_limit)
 
-            self.update_pheremones(self.best_tour)
+            self.update_pheromones(self.best_tour)
             counter += 1
 
             if counter % 1000 == 0:
@@ -118,6 +115,11 @@ cdef class MMAS:
                             self.rho, self.tau_min, self.tau_max, self.alpha,
                             self.beta, self.goal)
         return tsp_res
+
+    cdef float get_deviation(self, float best_value):
+        """Return the deviation of the current score from the optimum.
+        Example: Optimum = 2000, Score = 3000 -> Deviation = 0.5"""
+        return (best_value - self.opt) / self.opt
 
     cdef tuple construct(self):
         cdef int vertex = np.random.choice(self.all_nodes)
@@ -143,8 +145,8 @@ cdef class MMAS:
     cdef int chose_next(self, int vertex, set unvisited_set):
         cdef float R = 0
         cdef int n = len(unvisited_set)
-        cdef np.ndarray[np.int_t] unvisited = np.array(list(unvisited_set), dtype=np.int)
-        cdef np.ndarray[np.float32_t, ndim=1] probs = np.empty(n, dtype=np.float32)
+        cdef np.ndarray[np.int_t, ndim=1, negative_indices=False, mode='c'] unvisited = np.array(list(unvisited_set), dtype=np.int)
+        cdef np.ndarray[np.float32_t, ndim=1, negative_indices=False, mode='c'] probs = np.empty(n, dtype=np.float32)
 
         cdef float tau
         cdef float weight
@@ -157,10 +159,10 @@ cdef class MMAS:
             prob = tau**self.alpha * weight**(-self.beta)
             R += prob
             probs[i] = prob
-
+        
         cdef int j
         for j in range(n):
-            probs[j] /= R
+           probs[j] /= R 
 
         return np.random.choice(unvisited, p=probs)
 
@@ -175,7 +177,7 @@ cdef class MMAS:
             tmp = i
             i = j
             j = tmp
-        return self.pheremones[i, j]
+        return self.pheromones[i, j]
 
     cdef set_pheromone(self, float value, int i, int j):
         cdef int tmp
@@ -183,14 +185,14 @@ cdef class MMAS:
             tmp = i
             i = j
             j = tmp
-        self.pheremones[i, j] = value
+        self.pheromones[i, j] = value
 
-    cdef init_pheremones(self):
+    cdef init_pheromones(self):
         cdef float value = 1 / self.n
         for edge in self.all_edges:
             self.set_pheromone(value, edge[0], edge[1])
 
-    cdef update_pheremones(self, list tour):
+    cdef update_pheromones(self, list tour):
         tour_edge_ids = set(self.edge_id(edge[0], edge[1]) for edge in tour)
         cdef float current_tau
         cdef float new_tau
@@ -206,10 +208,10 @@ cdef class MMAS:
     cdef print_status(self, int counter):
         print('Iterations: %d  - Current opt: %f - opt: %f - Deviation: %f' % (
               counter, self.best_value, self.opt,
-              self.get_deviation(self.opt, self.best_value)))
+              self.get_deviation(self.best_value)))
         if self.plotter is not None:
             self.plotter.plot_solution(self.best_tour)
-            self.plotter.plot_pheremones(self.all_edges, self.pheremones)
+            self.plotter.plot_pheromones(self.all_edges, self.pheromones)
 
     cdef reset_tau(self):
         self.tau_min = 1.0 / (self.n * self.n)
