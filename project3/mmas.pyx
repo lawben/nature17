@@ -144,7 +144,7 @@ cdef class MMAS:
                             self.beta, self.goal)
         return tsp_res
 
-    cdef float get_deviation(self, int best_value):
+    def get_deviation(self, best_value):
         """Return the deviation of the current score from the optimum.
         Example: Optimum = 2000, Score = 3000 -> Deviation = 0.5"""
         return 1.0 * (best_value - self.opt) / self.opt

@@ -70,23 +70,26 @@ def get_instance_files(data_path):
     raise ValueError("Need one of data_dir or file(s)!")
 
 
-def parallel_setup(instances, iterations, params, arg_list):
+def parallel_setup(instances, iterations, config):
     queue = Queue()
 
     for inst, files in instances:
         exec_number = 0
-        for param in params:
-            for iter in range(iterations):
-                run_config = {
-                    'exec_number': exec_number,
-                    'iter': iter,
-                    'inst': inst,
-                    'tsp_file': files[0],
-                    'opt_file': files[1],
-                    'param': param
-                }
-                queue.put(run_config)
-            exec_number += 1
+        for iter in range(iterations):
+            run_config = {
+                'exec_number': exec_number,
+                'iter': iter,
+                'inst': inst,
+                'tsp_file': files[0],
+                'opt_file': files[1],
+                'goal': config['goal']
+            }
+
+            if 'opt' in config:
+                run_config['opt'] = config['opt']
+
+            queue.put(run_config)
+        exec_number += 1
 
     return queue
 
@@ -102,7 +105,6 @@ def parallel_runner(queue, result_files, locks, notify_fn):
         exec_number = config['exec_number']
         iter = config['iter']
         inst = config['inst']
-        params = config['params']
 
         raw_matrix = parser.parse(config['tsp_file'])
         if config['opt_file']:
@@ -113,9 +115,9 @@ def parallel_runner(queue, result_files, locks, notify_fn):
 
         # Make sure this is always a float matrix
         matrix = np.asmatrix(raw_matrix, dtype=np.float32)
-        mmas = MMAS(matrix, opt, **params)
+        solver = MMAS(matrix, opt, goal=config['goal'])
 
-        res = mmas.run()
+        res = solver.run()
         res.exec_number = exec_number
         res.iteration = iter
 
@@ -132,7 +134,7 @@ def parallel_runner(queue, result_files, locks, notify_fn):
             res_f.write(res_line)
         lock.release()
 
-        if MMAS.get_deviation(res.opt, res.result) * 100 <= res.goal:
+        if solver.get_deviation(res.result) * 100 <= res.goal:
             msg = ("Goal Deviation of {0:.0f}% reached for file {1:s} after "
                    "{2:0d} iterations. Result in {3} with exec_number {4} in "
                    "iteration {5}")
@@ -142,7 +144,7 @@ def parallel_runner(queue, result_files, locks, notify_fn):
 
 def run_parallel(data_path, iterations, notify_fn, params=None):
     if params is None:
-        params = [{}]
+        params = {}
 
     instances = get_instance_files(data_path)
 

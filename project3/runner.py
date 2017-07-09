@@ -27,7 +27,14 @@ def main(args):
     # Run in parallel
     if args.parallel:
         notify_fn = notify if args.notify else print
-        return run_parallel(args.tsp_file, args.iterations, notify_fn)
+        config = {
+            'goal': args.goal,
+        }
+
+        if args.opt is not None:
+            config['opt'] = args.opt
+
+        return run_parallel(args.tsp_file, args.iterations, notify_fn, config)
 
     data_file = args.tsp_file
     tour_file = data_file[:-4] + ".opt"
