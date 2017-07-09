@@ -75,7 +75,14 @@ def parallel_setup(instances, iterations, params):
         exec_number = 0
         for param in params:
             for iter in range(iterations):
-                run_config = (exec_number, iter, inst, files, param)
+                run_config = {
+                    'exec_number': exec_number,
+                    'iter': iter,
+                    'inst': inst,
+                    'tsp_file': files[0],
+                    'opt_file': files[1],
+                    'param': param
+                }
                 queue.put(run_config)
             exec_number += 1
 
@@ -89,12 +96,18 @@ def parallel_runner(queue, result_files, locks, notify_fn):
             config = queue.get(block=False, timeout=1)
         except QEmpty:
             return
+        files
+        exec_number = config['exec_number']
+        iter = config['iter']
+        inst = config['inst']
+        params = config['params']
 
-        exec_number, iter, inst, files, params = config
-
-        raw_matrix = parser.parse(files[0])
-        opt_tour = parser.parse_tour(files[1])
-        opt = parser.get_opt(opt_tour, raw_matrix)
+        raw_matrix = parser.parse(config['tsp_file'])
+        if config['opt_file']:
+            opt_tour = parser.parse_tour(config['opt_file'])
+            opt = parser.get_opt(opt_tour, raw_matrix)
+        else:
+            opt = config['opt']
 
         # Make sure this is always a float matrix
         matrix = np.asmatrix(raw_matrix, dtype=np.float32)
@@ -119,7 +132,7 @@ def parallel_runner(queue, result_files, locks, notify_fn):
             msg = ("Goal Deviation of {0:.0f}% reached for file {1:s} after "
                    "{2:0d} iterations. Result in {3} with exec_number {4} in "
                    "iteration {5}")
-            notify_fn(msg.format(res.goal, files[0], res.iterations, res_file,
+            notify_fn(msg.format(res.goal, config['tsp_file'], res.iterations, res_file,
                                  exec_number, iter))
 
 

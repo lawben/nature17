@@ -12,8 +12,8 @@ def notify(msg):
     os.system("ntfy -b telegram send '{}'".format(msg))
 
 
-def run_single(args, data_file, tour_file):
-    solver = MMAS.of(data_file, tour_file, not args.no_plot, args.goal)
+def run_single(args, data_file, tour_file=None, opt=None):
+    solver = MMAS.of(data_file, tour_file=tour_file, opt=opt, use_plotter=not args.no_plot, goal=args.goal)
     tsp_res = solver.run()
 
     outputs = ["Tour: " + tsp_res.str_tour,
@@ -37,10 +37,14 @@ def main(args):
         return run_parallel(args.tsp_file, args.iterations, notify_fn)
 
     data_file = args.tsp_file
-    goal = float(args.goal)
     tour_file = data_file[:-4] + ".opt"
     for i in range(args.iterations):
-        run_single(args, data_file, tour_file)
+        if args.opt is not None:
+            run_single(args, data_file, opt=args.opt)
+        elif os.file_exists(tour_file):
+            run_single(args, data_file, tour_file=tour_file)
+        else:
+            raise 'Must provide opt file or optimal value'
 
 
 if __name__ == '__main__':
@@ -51,6 +55,7 @@ if __name__ == '__main__':
     parser.add_argument("-g", "--goal", default=0, type=int)
     parser.add_argument("--parallel", action="store_true")
     parser.add_argument("-i", "--iterations", default=5, type=int)
+    parser.add_argument("--opt",  type=int)
 
     args = parser.parse_args()
     main(args)

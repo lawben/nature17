@@ -91,7 +91,7 @@ def nint(val):
     return int(val + 0.5)
 
 
-def calc_euclidian(points):
+def calc_euclidian(points, round_fn=nint):
     n = len(points)
     matrix = np.empty((n, n))
 
@@ -100,7 +100,7 @@ def calc_euclidian(points):
         for j in range(i, n):
             x2, y2 = points[j]
             dist = math.sqrt((x1 - x2)**2 + (y1 - y2)**2)
-            matrix[i, j] = matrix[j, i] = nint(dist)
+            matrix[i, j] = matrix[j, i] = round_fn(dist)
 
     return matrix
 
@@ -144,6 +144,8 @@ def parse_node_coords(raw_data, matrix_start, dimension):
     for line in raw_data:
         if "EUC_2D" in line:
             return calc_euclidian(points)
+        if 'CEIL_2D' in line:
+            return calc_euclidian(points, round_fn=lambda x: int(math.ceil(x)))
         if "GEO" in line:
             return calc_geo_dist(points)
 

@@ -50,15 +50,12 @@ class TspPlotter:
 
         ax.plot(x, y, 'co')
 
-    def plot_pheremones(self, edges, pheremones):
+    def plot_pheromones(self, edges, pheromones):
         self.ax3.cla()
-        # values = pheremones.values()
-        # min_val = min(values)
-        # max_val = max(values)
 
         self.plot_points(self.ax3)
         for edge in edges:
-            pheremone = pheremones[edge]
+            pheremone = pheromones[edge]
             self.plot_arrow(self.ax3, edge, width=min(pheremone*10, 1))
         plt.draw()
         plt.pause(1)
