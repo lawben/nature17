@@ -1,19 +1,12 @@
-import os
 from argparse import ArgumentParser
-from itertools import product
 
 from mmas import MMAS
-import parser
-from plot_tsp import TspPlotter
-from parallel import run_parallel
-
-
-def notify(msg):
-    os.system("ntfy -b telegram send '{}'".format(msg))
+from parallel import run_parallel, notify
 
 
 def run_single(args, data_file, tour_file=None, opt=None):
-    solver = MMAS.of(data_file, tour_file=tour_file, opt=opt, use_plotter=not args.no_plot, goal=args.goal)
+    solver = MMAS.of(data_file, tour_file=tour_file, opt=opt,
+                     use_plotter=not args.no_plot, goal=args.goal)
     tsp_res = solver.run()
 
     outputs = ["Tour: " + tsp_res.str_tour,

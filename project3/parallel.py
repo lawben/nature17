@@ -1,16 +1,18 @@
+import os
+import parser
 from datetime import datetime
-from functools import partial
 from multiprocessing import Pool, Queue, Lock, cpu_count
 from queue import Empty as QEmpty
-import os
 
 import numpy as np
-
-import parser
 from mmas import MMAS
 
 FILE_DIR = os.path.dirname(__file__)
 RESULT_DIR = os.path.join(FILE_DIR, "results")
+
+
+def notify(msg):
+    os.system("ntfy -b telegram send '{}'".format(msg))
 
 
 def setup_run(tsp_instance):
@@ -68,7 +70,7 @@ def get_instance_files(data_path):
     raise ValueError("Need one of data_dir or file(s)!")
 
 
-def parallel_setup(instances, iterations, params):
+def parallel_setup(instances, iterations, params, arg_list):
     queue = Queue()
 
     for inst, files in instances:
@@ -96,7 +98,7 @@ def parallel_runner(queue, result_files, locks, notify_fn):
             config = queue.get(block=False, timeout=1)
         except QEmpty:
             return
-        files
+
         exec_number = config['exec_number']
         iter = config['iter']
         inst = config['inst']
@@ -112,12 +114,14 @@ def parallel_runner(queue, result_files, locks, notify_fn):
         # Make sure this is always a float matrix
         matrix = np.asmatrix(raw_matrix, dtype=np.float32)
         mmas = MMAS(matrix, opt, **params)
+
         res = mmas.run()
         res.exec_number = exec_number
         res.iteration = iter
 
         log = log_fmt.format(datetime.now(), inst, iter, opt, res.result,
                              res.iterations, res.goal)
+        print(log)
 
         res_line = res.to_csv()
         res_file = result_files[inst]
@@ -132,8 +136,8 @@ def parallel_runner(queue, result_files, locks, notify_fn):
             msg = ("Goal Deviation of {0:.0f}% reached for file {1:s} after "
                    "{2:0d} iterations. Result in {3} with exec_number {4} in "
                    "iteration {5}")
-            notify_fn(msg.format(res.goal, config['tsp_file'], res.iterations, res_file,
-                                 exec_number, iter))
+            notify_fn(msg.format(res.goal, config['tsp_file'], res.iterations,
+                                 res_file, exec_number, iter))
 
 
 def run_parallel(data_path, iterations, notify_fn, params=None):
