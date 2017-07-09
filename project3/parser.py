@@ -39,10 +39,10 @@ def parse_points(data_file):
 
 
 def parse_full_matrix(raw_data, matrix_start, dimension):
-    matrix = np.empty((dimension, dimension))
+    matrix = np.empty((dimension, dimension), dtype=np.integer)
     for row_num in range(matrix_start, matrix_start + dimension):
         i = row_num - matrix_start
-        data_row = [float(x) for x in raw_data[row_num].split()]
+        data_row = [int(x) for x in raw_data[row_num].split()]
         for j in range(len(data_row)):
             matrix[i, j] = matrix[j, i] = data_row[j]
 
@@ -58,7 +58,7 @@ def parse_lower_diag_row(raw_data, matrix_start):
         if "EOF" in line or "DISPLAY_DATA_SECTION" in line:
             break
 
-        file_row = [float(x) for x in line.split()]
+        file_row = [int(x) for x in line.split()]
         for val in file_row:
             row.append(val)
             if val == 0:
@@ -67,7 +67,7 @@ def parse_lower_diag_row(raw_data, matrix_start):
 
     n = len(raw_matrix)
 
-    matrix = np.empty((n, n))
+    matrix = np.empty((n, n), dtype=np.integer)
     for i in range(n):
         dist_row = raw_matrix[i]
         for j in range(i + 1):
@@ -93,7 +93,7 @@ def nint(val):
 
 def calc_euclidian(points, round_fn=nint):
     n = len(points)
-    matrix = np.empty((n, n))
+    matrix = np.empty((n, n), dtype=np.integer)
 
     for i in range(n):
         x1, y1 = points[i]
@@ -107,14 +107,14 @@ def calc_euclidian(points, round_fn=nint):
 
 def calc_lon_lat(x):
     PI = 3.141592
-    deg = nint(x)
+    deg = int(x)
     min_ = x - deg
     return PI * (deg + 5.0 * min_ / 3.0) / 180.0
 
 
 def calc_geo_dist(points):
     n = len(points)
-    matrix = np.empty((n, n))
+    matrix = np.empty((n, n), dtype=np.integer)
 
     RRR = 6378.388
 
@@ -152,7 +152,6 @@ def parse_node_coords(raw_data, matrix_start, dimension):
 
 def parse(data_file):
     raw_data = [line for line in open(data_file)]
-    matrix_start = -1
     dimension = get_dimension(raw_data)
 
     if dimension == -1:
