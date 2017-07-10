@@ -25,7 +25,7 @@ cdef class MMAS:
     cdef int[:] all_nodes
 
     def __init__(self, adjacency_matrix, opt, rho=None, tau_min=None,
-                 tau_max=None, alpha=1.0, beta=8.0, object plotter=None, goal=0):
+                 tau_max=None, alpha=1.0, beta=4.0, object plotter=None, goal=0):
 
         self.MAX_INT = 2**31 - 1
 
@@ -138,8 +138,8 @@ cdef class MMAS:
             if counter % 1000 == 0:
                 self.print_status(counter)
 
-            # if counter == 1000:
-            #     break
+            if counter == 100000:
+                break
 
         tsp_res = TSPResult(self.opt, self.best_tour, self.best_value, counter,
                             self.rho, self.tau_min, self.tau_max, self.alpha,
@@ -173,14 +173,14 @@ cdef class MMAS:
         return tour, value
 
     cdef int chose_next(self, int vertex, set unvisited_set):
-        cdef float R = 0
+        cdef double R = 0
         cdef int n = len(unvisited_set)
         cdef np.ndarray[np.int_t, ndim=1, negative_indices=False, mode='c'] unvisited = np.array(list(unvisited_set), dtype=np.int)
-        cdef np.ndarray[np.float32_t, ndim=1, negative_indices=False, mode='c'] probs = np.empty(n, dtype=np.float32)
+        cdef np.ndarray[np.float64_t, ndim=1, negative_indices=False, mode='c'] probs = np.empty(n, dtype=np.float64)
 
         cdef float tau
         cdef int weight
-        cdef float prob
+        cdef double prob
         cdef int i, other_vertex
         for i in range(n):
             other_vertex = unvisited[i]
@@ -192,7 +192,7 @@ cdef class MMAS:
         
         cdef int j
         for j in range(n):
-           probs[j] /= R 
+           probs[j] /= R
 
         return np.random.choice(unvisited, p=probs)
 
