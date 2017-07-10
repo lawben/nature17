@@ -75,22 +75,29 @@ def parallel_setup(instances, iterations, config):
 
     for inst, files in instances:
         exec_number = 0
-        for goal in [1, 10, 30, 50, 70]:
-            for iter in range(iterations):
-                run_config = {
-                    'exec_number': exec_number,
-                    'iter': iter,
-                    'inst': inst,
-                    'tsp_file': files[0],
-                    'opt_file': files[1],
-                    'goal': goal
-                }
+        # for goal in [1, 10, 30, 50, 70]:
+        for goal in [0]:
+            for alpha in [0, 1, 2, 3, 4]:
+                for beta in [0, 1, 2, 3, 4]:
+                    for iter in range(iterations):
+                        run_config = {
+                            'exec_number': exec_number,
+                            'iter': iter,
+                            'inst': inst,
+                            'tsp_file': files[0],
+                            'opt_file': files[1],
+                            'params': {
+                                'goal': goal,
+                                'alpha': alpha,
+                                'beta': beta
+                            }
+                        }
 
-                if 'opt' in config:
-                    run_config['opt'] = config['opt']
+                        if 'opt' in config:
+                            run_config['opt'] = config['opt']
 
-                queue.put(run_config)
-            exec_number += 1
+                        queue.put(run_config)
+                    exec_number += 1
 
     return queue
 
@@ -116,7 +123,7 @@ def parallel_runner(queue, result_files, locks, notify_fn):
 
         # Make sure this is always a float matrix
         matrix = np.asmatrix(raw_matrix, dtype=np.float32)
-        solver = MMAS(matrix, opt, goal=config['goal'])
+        solver = MMAS(matrix, opt, **config['params'])
 
         res = solver.run()
         res.exec_number = exec_number

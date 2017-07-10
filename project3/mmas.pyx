@@ -138,7 +138,7 @@ cdef class MMAS:
             if counter % 1000 == 0:
                 self.print_status(counter)
 
-            if counter == 100000:
+            if counter == 5000:
                 break
 
         tsp_res = TSPResult(self.opt, self.best_tour, self.best_value, counter,
