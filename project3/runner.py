@@ -1,4 +1,5 @@
 from argparse import ArgumentParser
+import os
 
 from mmas import MMAS
 from parallel import run_parallel, notify
@@ -41,7 +42,7 @@ def main(args):
     for i in range(args.iterations):
         if args.opt is not None:
             run_single(args, data_file, opt=args.opt)
-        elif os.file_exists(tour_file):
+        elif os.path.isfile(tour_file):
             run_single(args, data_file, tour_file=tour_file)
         else:
             raise 'Must provide opt file or optimal value'

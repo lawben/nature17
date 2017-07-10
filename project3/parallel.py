@@ -12,7 +12,7 @@ RESULT_DIR = os.path.join(FILE_DIR, "results")
 
 
 def notify(msg):
-    os.system("ntfy -b telegram send '{}'".format(msg))
+    os.system("~/.local/bin/ntfy -b telegram send '{}'".format(msg))
 
 
 def setup_run(tsp_instance):
