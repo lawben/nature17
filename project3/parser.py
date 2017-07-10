@@ -39,7 +39,7 @@ def parse_points(data_file):
 
 
 def parse_full_matrix(raw_data, matrix_start, dimension):
-    matrix = np.empty((dimension, dimension), dtype=np.integer)
+    matrix = np.empty((dimension, dimension), dtype=np.int32)
     for row_num in range(matrix_start, matrix_start + dimension):
         i = row_num - matrix_start
         data_row = [int(x) for x in raw_data[row_num].split()]
@@ -67,7 +67,7 @@ def parse_lower_diag_row(raw_data, matrix_start):
 
     n = len(raw_matrix)
 
-    matrix = np.empty((n, n), dtype=np.integer)
+    matrix = np.empty((n, n), dtype=np.int32)
     for i in range(n):
         dist_row = raw_matrix[i]
         for j in range(i + 1):
@@ -93,7 +93,7 @@ def nint(val):
 
 def calc_euclidian(points, round_fn=nint):
     n = len(points)
-    matrix = np.empty((n, n), dtype=np.integer)
+    matrix = np.empty((n, n), dtype=np.int32)
 
     for i in range(n):
         x1, y1 = points[i]
@@ -114,7 +114,7 @@ def calc_lon_lat(x):
 
 def calc_geo_dist(points):
     n = len(points)
-    matrix = np.empty((n, n), dtype=np.integer)
+    matrix = np.empty((n, n), dtype=np.int32)
 
     RRR = 6378.388
 
