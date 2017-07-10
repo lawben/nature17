@@ -95,7 +95,7 @@ cdef class MMAS:
         cdef int last_improve = 0
         cdef int adapt_diff
         cdef bool need_adapt = False
-        cdef int adapt_limit = 1000
+        cdef int adapt_limit = 3000
 
         self.init_pheromones()
 
@@ -103,7 +103,7 @@ cdef class MMAS:
             iteration_best = self.MAX_INT
             iteration_best_tour = []
 
-            for _ in range(1):
+            for _ in range(5):
                 tour, value = self.construct()
 
                 if value < iteration_best:
@@ -120,13 +120,14 @@ cdef class MMAS:
             need_adapt =  (adapt_diff >= adapt_limit and
                             adapt_diff % adapt_limit == 0)
 
-            if adapt_diff >= 5000:
+            if adapt_diff >= 10000:
                 # Restart
                 self.init_pheromones()
                 last_improve = counter
 
             if need_adapt:
                 self.adapt_pheromones(adapt_diff // adapt_limit)
+                last_improve = counter
 
             if counter % 3 == 0:
                 self.update_pheromones(self.best_tour, self.best_value)

@@ -21,9 +21,27 @@ def run_single(args, data_file, tour_file=None, opt=None):
         notify(message.format(args.goal, data_file, tsp_res.iterations))
 
 
+def print_ant():
+    ant = """
+   \       /
+    \     /
+     \.-./
+    (o\^/o)  _   _   _     __
+     ./ \.\ ( )-( )-( ) .-'  '-.
+      {-} \(//  ||   \\/ (   )) '-.-|
+           //-__||__.-\\.       .-'-|
+          (/    ()     \)'-._.-'
+          ||    |)      \\
+          ('    ('       ')
+"""
+    print(ant)
+
+
 def main(args):
     print("\nWelcome to ANT WORLD!")
     print("=====================\n")
+    print("")
+    print_ant()
 
     # Run in parallel
     if args.parallel:
