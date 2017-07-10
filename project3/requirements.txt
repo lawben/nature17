@@ -2,3 +2,4 @@ numpy
 matplotlib
 cython
 ntfy[telegram]
+pandas
