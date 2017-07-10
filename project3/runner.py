@@ -10,6 +10,11 @@ def run_single(args, data_file, tour_file=None, opt=None):
                      use_plotter=not args.no_plot, goal=args.goal)
     tsp_res = solver.run()
 
+    if args.output is not None:
+        line = tsp_res.to_csv()
+        with open(args.output, 'a') as f:
+            f.write(line)
+
     outputs = ["Tour: " + tsp_res.str_tour,
                "Score: " + str(tsp_res.result),
                "Iterations: " + str(tsp_res.iterations)]
@@ -73,8 +78,9 @@ if __name__ == '__main__':
     parser.add_argument("--notify", action='store_true')
     parser.add_argument("-g", "--goal", default=0, type=int)
     parser.add_argument("--parallel", action="store_true")
-    parser.add_argument("-i", "--iterations", default=5, type=int)
+    parser.add_argument("-i", "--iterations", default=1, type=int)
     parser.add_argument("--opt",  type=int)
+    parser.add_argument("-o", "--output")
 
     args = parser.parse_args()
     main(args)
