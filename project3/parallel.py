@@ -76,17 +76,18 @@ def parallel_setup(instances, iterations, config):
     for inst, files in instances:
         exec_number = 0
         for iter in range(iterations):
-            run_config = {
-                'exec_number': exec_number,
-                'iter': iter,
-                'inst': inst,
-                'tsp_file': files[0],
-                'opt_file': files[1],
-                'goal': config['goal']
-            }
+            for goal in [10, 30, 50, 70]:
+                run_config = {
+                    'exec_number': exec_number,
+                    'iter': iter,
+                    'inst': inst,
+                    'tsp_file': files[0],
+                    'opt_file': files[1],
+                    'goal': goal
+                }
 
-            if 'opt' in config:
-                run_config['opt'] = config['opt']
+                if 'opt' in config:
+                    run_config['opt'] = config['opt']
 
             queue.put(run_config)
         exec_number += 1
