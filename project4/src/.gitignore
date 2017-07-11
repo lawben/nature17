@@ -1,0 +1,12 @@
+.python-version
+__pycache__
+*.c
+*.html
+*.so
+build
+
+results/
+
+
+# Mac stuff
+.vscode/
