@@ -1,16 +1,12 @@
 #cython: boundscheck=False, wraparound=False, nonecheck=False
 from cpython cimport array
 from cython.parallel import prange
+from libc.stdlib cimport malloc
 import array
 
 import numpy as np
 cimport numpy as np
 
-
-Student_DT = np.dtype([('id_', np.int16), 
-               ('sex', np.int8), 
-               ('discipline', np.int8), 
-               ('nationality', np.int8)])
 
 cdef packed struct Student:
     np.int16_t id_  # We don't want to carry along the string hash
@@ -21,34 +17,29 @@ cdef packed struct Student:
 cdef class DiversityFinder:
     
     cdef int num_students
-    cdef Student[:] students
+    cdef Student students[81]
 
     def __init__(self, students):
         self.num_students = len(students)
 
-        raw_students = []
+        cdef Student *s
+
         for i in range(self.num_students):
             stud = students[i]
-            id_ = 0
-            sex = 0 if stud[1] == "m" else 1
-            discipline = 1  # TODO: Make this dependent on stud[2]
-            nationality = 1  # TODO: Make this dependent on stud[3]
-            raw_stud = (id_, sex, discipline, nationality)
-            raw_students.append(raw_stud)
+            s = &self.students[i]
 
-        self.students = np.asarray(raw_students, dtype=Student_DT)
+            s.id_ = i
+            s.sex = 0 if stud[1] == "m" else 1
+            s.discipline = i  # TODO: Make this dependent on stud[2]
+            s.nationality = 1  # TODO: Make this dependent on stud[3]
+
 
     def get_diverse_teams(self):
-        for i in range(self.num_students):
-            print(self.students[i].sex)
-
-        print("===")
         self.calc()
 
-        for i in range(self.num_students):
-            print(self.students[i].sex)
+    cdef void calc(self):
+        cdef int sum_sex = 0
+        cdef int i
 
-    cdef void calc(self) nogil:
-        for i in range(self.num_students):
-            self.students[i].sex += 1
-
+        for i in prange(self.num_students, nogil=True):
+            sum_sex += self.students[i].sex
