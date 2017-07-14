@@ -4,6 +4,9 @@ from cython.parallel import prange
 import numpy as np
 cimport numpy as np
 
+from rls import RLS
+
+
 cdef class DiversityFinder:
     
     cdef int num_students
@@ -46,7 +49,7 @@ cdef class DiversityFinder:
         teams = {}
 
         teams["teaming1"] = self.get_teaming1()
-        # teams["teaming2"] = self.get_teaming2()
+        teams["teaming2"] = self.get_teaming2()
         # teams["teaming3"] = self.get_teaming3()
         # teams["teaming4"] = self.get_teaming4()
 
@@ -54,14 +57,25 @@ cdef class DiversityFinder:
         
 
     def get_teaming1(self):
-        cdef int team1[81]
-        self.create_teaming1(team1)
-        return self.teaming_to_team(team1)
+        cdef list team = self.create_teaming1()
+        return self.teaming_to_team(team)
 
-    cdef list teaming_to_team(self, int* teaming):
-        cdef list team = []
+    cdef list create_teaming1(self):
+        return list(range(self.num_students))
+
+    def get_teaming2(self):
+        cdef list team = self.create_teaming2()
+        return self.teaming_to_team(team)
+
+    cdef list create_teaming2(self):
+        rls = RLS(self.students, self.num_students)
+        return rls.run()
+
+    cdef list teaming_to_team(self, list teaming):
+        cdef list teams = []
         cdef int student_number
         cdef int team_number = 0
+        
         for i in range(self.num_students):
             # teaming at i contains student number
             student_number = teaming[i]
@@ -77,14 +91,9 @@ cdef class DiversityFinder:
                 team_number = 15
 
             stud = (s_hash, team_number)
-            team.append(stud)
+            teams.append(stud)
 
-        return team
-
-    cdef void create_teaming1(self, int* teaming):
-        cdef int i
-        for i in range(self.num_students):
-            teaming[i] = i
+        return teams
 
     cdef void calc(self):
         cdef int sum_sex = 0
