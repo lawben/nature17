@@ -8,11 +8,14 @@ from rls import RLS
 
 
 cdef class DiversityFinder:
-    
+
     cdef int num_students
     cdef Student students[81]
     cdef dict dis_to_number
     cdef dict nat_to_number
+    cdef int unique_genders
+    cdef int unique_disciplines
+    cdef int unique_nationalities
 
     def __init__(self, students):
         self.num_students = len(students)
@@ -24,14 +27,26 @@ cdef class DiversityFinder:
         # Init student array
         cdef Student *s
         cdef int i
+
+        self.unique_genders = 2
+        disciplines = []
+        nationalities = []
+
         for i in range(self.num_students):
             stud = students[i]
             s = &self.students[i]
 
             s.s_hash = stud[0].encode()
             s.sex = False if stud[1] == "m" else True
-            s.discipline = self.dis_to_number[stud[2]] 
+            s.discipline = self.dis_to_number[stud[2]]
             s.nationality = self.nat_to_number[stud[3]]
+
+            disciplines.append(s.discipline)
+            nationalities.append(s.nationality)
+
+        self.unique_disciplines = max(disciplines) + 1
+        self.unique_nationalities = max(nationalities) + 1
+
 
     def _convert_students(self, students):
         self.dis_to_number = self._convert_disciplines(students)
@@ -54,11 +69,39 @@ cdef class DiversityFinder:
         # teams["teaming4"] = self.get_teaming4()
 
         return teams
-        
+
 
     def get_teaming1(self):
         cdef list team = self.create_teaming1()
+        self.get_intra_fitness(team)
         return self.teaming_to_team(team)
+
+    cdef log_n(self, x, base):
+      """numpy has no log function with arbitrary base :-("""
+      return np.log(np.array(x))/np.log(base)
+
+    cdef get_entropy(self, list attribute_list, int unique_overall):
+      a = np.array(attribute_list)
+      unique, counts = np.unique(a, return_counts=True)
+      p = counts/float(counts.sum())
+      base = min(len(a), unique_overall)
+      return -np.sum(p*self.log_n(p, base))
+
+    cdef float get_intra_fitness(self, list team):
+      """Get intra-team diversities using the entropy on all attributes"""
+      cdef list genders = []
+      cdef list disciplines = []
+      cdef list nationalities = []
+
+      for i in range(self.num_students):
+          s = &self.students[i]
+          genders.append(s.sex)
+          disciplines.append(s.discipline)
+          nationalities.append(s.nationality)
+      print(self.get_entropy(genders, self.unique_genders),
+            self.get_entropy(disciplines, self.unique_disciplines),
+            self.get_entropy(nationalities, self.unique_nationalities))
+      return self.get_entropy(genders, self.unique_genders)
 
     cdef list create_teaming1(self):
         return list(range(self.num_students))
@@ -75,7 +118,7 @@ cdef class DiversityFinder:
         cdef list teams = []
         cdef int student_number
         cdef int team_number = 0
-        
+
         for i in range(self.num_students):
             # teaming at i contains student number
             student_number = teaming[i]
