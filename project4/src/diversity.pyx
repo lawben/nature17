@@ -22,9 +22,9 @@ cdef class DiversityFinder:
     def __init__(self, students):
         self.num_students = len(students)
 
-        self.dis_to_number = {}
-        self.nat_to_number = {}
-        converted_students = self._convert_students(students)
+        self.dis_to_number = None
+        self.nat_to_number = None
+        self._convert_students(students)
 
         # Init student array
         cdef Student *s
