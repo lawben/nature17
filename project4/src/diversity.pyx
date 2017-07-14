@@ -51,31 +51,40 @@ cdef class DiversityFinder:
         return {nat: num for num, nat in enumerate(nationalities)}
 
     def get_diverse_teams(self):
-        cdef list team1 = []
-        cdef int[:] teaming = self.teaming_1()
+        teams = {}
 
-        for t in teaming:
-            print(t)
+        teams["teaming1"] = self.get_teaming1()
+        # teams["teaming2"] = self.get_teaming2()
+        # teams["teaming3"] = self.get_teaming3()
+        # teams["teaming4"] = self.get_teaming4()
 
+        return teams
+        
+
+    def get_teaming1(self):
+        cdef int team1[81]
+        self.create_teaming1(team1)
+        return self.teaming_to_team(team1)
+
+    cdef list teaming_to_team(self, int* teaming):
+        cdef list team = []
+        cdef int student_number
+        cdef int team_number = 0
         for i in range(self.num_students):
-            s_hash = self.students[i].s_hash.decode()
-            stud = (s_hash, teaming[i])
-            team1.append(stud)
+            student_number = teaming[i]
+            s_hash = self.students[student_number].s_hash.decode()[:32]
+            team_number = i / 5
+            if i == 80:
+                team_number = 15
+            stud = (s_hash, team_number)
+            team.append(stud)
 
-        return team1
+        return team
 
-    cdef int[:] teaming_1(self):
+    cdef void create_teaming1(self, int* teaming):
         cdef int i
-        cdef int asignments[81]
-
         for i in range(self.num_students):
-            asignments[i] = i * 10
-
-        for i in asignments:
-            print(i)
-
-        return asignments[:]
-
+            teaming[i] = i
 
     cdef void calc(self):
         cdef int sum_sex = 0
