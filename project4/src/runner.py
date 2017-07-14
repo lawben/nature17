@@ -9,7 +9,8 @@ def main(csv_file):
     students = parse(csv_file)
     for semester, studs in students.items():
         div = DiversityFinder(studs)
-        div.get_diverse_teams()
+        print(div.get_diverse_teams())
+        break
 
 
 if __name__ == '__main__':
