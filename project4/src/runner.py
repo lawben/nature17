@@ -29,9 +29,14 @@ def main(csv_file):
 
 
 if __name__ == '__main__':
+    print("\n========================")
+    print("Finding diverse Teams...")
+    print("========================\n")
+
     file_dir = os.path.dirname(__file__)
     file_ = os.path.join(file_dir, "..", "project4.csv")
 
     os.makedirs(RES_DIR, exist_ok=True)
 
     main(file_)
+    print("Found all diverse Teams!")
