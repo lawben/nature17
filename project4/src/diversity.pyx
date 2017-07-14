@@ -71,11 +71,19 @@ cdef class DiversityFinder:
         cdef int student_number
         cdef int team_number = 0
         for i in range(self.num_students):
+            # teaming at i contains student number
             student_number = teaming[i]
+
+            # Decode fom bytes and remove null bytes
             s_hash = self.students[student_number].s_hash.decode()[:32]
+
+            # Each block of 5 students belong to one team
             team_number = i / 5
+
+            # Last team has 6 people, if neccessary
             if i == 80:
                 team_number = 15
+
             stud = (s_hash, team_number)
             team.append(stud)
 
