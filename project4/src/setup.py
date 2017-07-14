@@ -1,15 +1,15 @@
 from distutils.core import setup
 from distutils.extension import Extension
 from Cython.Distutils import build_ext
+from Cython.Build import cythonize
 import numpy
 
-ext_modules = [Extension("diversity", ["diversity.pyx"], libraries=["m"],
-                         extra_compile_args=["-ffast-math", "-w"],
-                         include_dirs=[numpy.get_include()])]
+ext_modules = [Extension("*", ["*.pyx"], libraries=["m"],
+               extra_compile_args=["-ffast-math", "-w"],
+               include_dirs=[numpy.get_include()])]
 
 setup(
     name="D-School Diversity",
     cmdclass={"build_ext": build_ext},
-    ext_modules=ext_modules,
-    include_dirs=[numpy.get_include()]
+    ext_modules=cythonize(ext_modules)
 )

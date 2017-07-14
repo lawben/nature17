@@ -10,3 +10,5 @@ results/
 
 # Mac stuff
 .vscode/
+
+.ipynb_checkpoints
