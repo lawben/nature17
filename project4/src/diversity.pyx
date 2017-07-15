@@ -3,6 +3,7 @@ from cython.parallel import prange
 
 import numpy as np
 cimport numpy as np
+import math
 
 from rls import RLS
 
@@ -76,16 +77,23 @@ cdef class DiversityFinder:
         self.get_intra_fitness(team)
         return self.teaming_to_team(team)
 
-    cdef log_n(self, x, base):
-      """numpy has no log function with arbitrary base :-("""
-      return np.log(np.array(x))/np.log(base)
-
     cdef get_entropy(self, list attribute_list, int unique_overall):
-      a = np.array(attribute_list)
-      unique, counts = np.unique(a, return_counts=True)
-      p = counts/float(counts.sum())
-      base = min(len(a), unique_overall)
-      return -np.sum(p*self.log_n(p, base))
+      max_item = max(attribute_list)
+      item_counts = [0]*(max_item+1)
+
+      for i in range(len(attribute_list)):
+        item_counts[attribute_list[i]] += 1
+
+      p = []
+      sum_item_counts = sum(item_counts)
+      for item_count in item_counts:
+        p.append(item_count/float(sum_item_counts))
+      base = min(len(attribute_list), unique_overall)
+
+      sum_ = 0
+      for pi in p:
+        sum_ += pi * math.log(pi, base)
+      return -sum_
 
     cdef float get_intra_fitness(self, list team):
       """Get intra-team diversities using the entropy on all attributes"""
