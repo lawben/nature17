@@ -3,7 +3,6 @@ from cython.parallel import prange
 
 import numpy as np
 cimport numpy as np
-import math
 
 from rls import RLS
 
@@ -14,9 +13,6 @@ cdef class DiversityFinder:
     cdef Student students[81]
     cdef dict dis_to_number
     cdef dict nat_to_number
-    cdef int unique_genders
-    cdef int unique_disciplines
-    cdef int unique_nationalities
 
     def __init__(self, students):
         self.num_students = len(students)
@@ -29,10 +25,6 @@ cdef class DiversityFinder:
         cdef Student *s
         cdef int i
 
-        self.unique_genders = 2
-        disciplines = []
-        nationalities = []
-
         for i in range(self.num_students):
             stud = students[i]
             s = &self.students[i]
@@ -41,12 +33,6 @@ cdef class DiversityFinder:
             s.sex = 0 if stud[1] == "m" else 1
             s.discipline = self.dis_to_number[stud[2]]
             s.nationality = self.nat_to_number[stud[3]]
-
-            disciplines.append(s.discipline)
-            nationalities.append(s.nationality)
-
-        self.unique_disciplines = max(disciplines) + 1
-        self.unique_nationalities = max(nationalities) + 1
 
 
     def _convert_students(self, students):
@@ -74,42 +60,7 @@ cdef class DiversityFinder:
 
     def get_teaming1(self):
         cdef list team = self.create_teaming1()
-        self.get_intra_fitness(team)
         return self.teaming_to_team(team)
-
-    cdef get_entropy(self, list attribute_list, int unique_overall):
-      max_item = max(attribute_list)
-      item_counts = [0]*(max_item+1)
-
-      for i in range(len(attribute_list)):
-        item_counts[attribute_list[i]] += 1
-
-      p = []
-      sum_item_counts = sum(item_counts)
-      for item_count in item_counts:
-        p.append(item_count/float(sum_item_counts))
-      base = min(len(attribute_list), unique_overall)
-
-      sum_ = 0
-      for pi in p:
-        sum_ += pi * math.log(pi, base)
-      return -sum_
-
-    cdef float get_intra_fitness(self, list team):
-      """Get intra-team diversities using the entropy on all attributes"""
-      cdef list genders = []
-      cdef list disciplines = []
-      cdef list nationalities = []
-
-      for i in range(self.num_students):
-          s = &self.students[i]
-          genders.append(s.sex)
-          disciplines.append(s.discipline)
-          nationalities.append(s.nationality)
-      print(self.get_entropy(genders, self.unique_genders),
-            self.get_entropy(disciplines, self.unique_disciplines),
-            self.get_entropy(nationalities, self.unique_nationalities))
-      return self.get_entropy(genders, self.unique_genders)
 
     cdef list create_teaming1(self):
         return list(range(self.num_students))
