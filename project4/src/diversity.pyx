@@ -38,7 +38,7 @@ cdef class DiversityFinder:
             s = &self.students[i]
 
             s.s_hash = stud[0].encode()
-            s.sex = False if stud[1] == "m" else True
+            s.sex = 0 if stud[1] == "m" else 1
             s.discipline = self.dis_to_number[stud[2]]
             s.nationality = self.nat_to_number[stud[3]]
 
