@@ -9,7 +9,7 @@ from evolutionary_algorithm import EvolutionaryAlgorithm
 
 algos = {
     'ea': lambda params: EvolutionaryAlgorithm(20, 4, **params),
-    #'rls': lambda params: RLS(self.students, **params)
+    'rls': lambda params: RLS(**params)
 }
 
 cdef class DiversityFinder:

@@ -1,4 +1,4 @@
-import array
+#cython: boundscheck=False, wraparound=False, nonecheck=False
 import random
 
 from libc.stdlib cimport rand
@@ -12,19 +12,16 @@ from diversity cimport Student
 
 
 cdef class RLS:
-    
-    # cdef list students
+
     cdef int n_students
     cdef carray population
 
-    def __init__(self, list students, int n_students):
+    def __init__(self, int n_students):
         self.n_students = n_students
 
-        # for i in range(self.n_students):
-        #     self.students[i] = students[i] 
-
-        self.population = carray('i', range(self.n_students))
-        random.shuffle(self.population)
+        cdef list raw_pop = list(range(self.n_students))
+        random.shuffle(raw_pop)
+        self.population = carray('i', raw_pop)
 
     def run(self, iterations=10000):
         return self.search(iterations)
