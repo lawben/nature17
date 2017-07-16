@@ -1,11 +1,16 @@
-#cython: boundscheck=False, wraparound=False, nonecheck=False
+
 from cython.parallel import prange
 
 import numpy as np
 cimport numpy as np
 
 from rls import RLS
+from evolutionary_algorithm import EvolutionaryAlgorithm
 
+algos = {
+    'ea': lambda params: EvolutionaryAlgorithm(20, 4, **params),
+    #'rls': lambda params: RLS(self.students, **params)
+}
 
 cdef class DiversityFinder:
     
@@ -13,9 +18,12 @@ cdef class DiversityFinder:
     cdef Student students[81]
     cdef dict dis_to_number
     cdef dict nat_to_number
+    cdef str algo_name
 
-    def __init__(self, students):
+    def __init__(self, students, algo_name):
         self.num_students = len(students)
+        
+        self.algo_name = algo_name
 
         self.dis_to_number = None
         self.nat_to_number = None
@@ -68,8 +76,8 @@ cdef class DiversityFinder:
         return self.teaming_to_team(team)
 
     cdef list create_teaming2(self):
-        rls = RLS(self.students, self.num_students)
-        return rls.run()
+        algo = algos[self.algo_name]({ 'n_students': self.num_students })
+        return algo.run()
 
     cdef list teaming_to_team(self, list teaming):
         cdef list teams = []
@@ -94,10 +102,3 @@ cdef class DiversityFinder:
             teams.append(stud)
 
         return teams
-
-    cdef void calc(self):
-        cdef int sum_sex = 0
-        cdef int i
-
-        for i in prange(self.num_students, nogil=True):
-            sum_sex += self.students[i].sex

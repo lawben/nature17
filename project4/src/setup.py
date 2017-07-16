@@ -11,5 +11,5 @@ ext_modules = [Extension("*", ["*.pyx"], libraries=["m"],
 setup(
     name="D-School Diversity",
     cmdclass={"build_ext": build_ext},
-    ext_modules=cythonize(ext_modules)
+    ext_modules=cythonize(ext_modules, gdb_debug=True)
 )

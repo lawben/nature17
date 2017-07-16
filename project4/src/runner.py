@@ -6,6 +6,8 @@ from diversity import DiversityFinder
 
 RES_DIR = os.path.join(os.path.dirname(__file__), "results")
 
+ALGO_NAME = 'ea'
+
 
 def main(csv_file):
     students = parse(csv_file)
@@ -20,7 +22,7 @@ def main(csv_file):
     }
 
     for semester, studs in students.items():
-        div = DiversityFinder(studs)
+        div = DiversityFinder(studs, ALGO_NAME)
         for teaming, teams in div.get_diverse_teams().items():
             with open(res_files[teaming], "a") as res_f:
                 lines = ["{},{},{}\n".format(s_hash, team, semester)

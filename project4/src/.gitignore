@@ -10,3 +10,4 @@ results/
 
 # Mac stuff
 .vscode/
+cython_debug/
