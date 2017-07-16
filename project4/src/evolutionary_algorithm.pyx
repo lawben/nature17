@@ -1,3 +1,4 @@
+#cython: boundscheck=False, wraparound=False, nonecheck=False
 import random
 import sys
 import time
