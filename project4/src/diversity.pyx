@@ -4,6 +4,8 @@ from cython.parallel import prange
 import numpy as np
 cimport numpy as np
 
+from fitness import Fitness
+from fitness cimport Fitness
 from rls import RLS
 from evolutionary_algorithm import EvolutionaryAlgorithm
 
@@ -42,6 +44,13 @@ cdef class DiversityFinder:
             s.discipline = self.dis_to_number[stud[2]]
             s.nationality = self.nat_to_number[stud[3]]
 
+    def create_fitness(self):
+        unique_genders = 2
+        unique_disciplines = len(self.dis_to_number)
+        unique_nationalities = len(self.nat_to_number)
+        fitness = Fitness(unique_genders, unique_disciplines, unique_nationalities, self.num_students)
+        fitness.set_students(self.students)
+        return fitness
 
     def _convert_students(self, students):
         self.dis_to_number = self._convert_disciplines(students)
@@ -78,7 +87,12 @@ cdef class DiversityFinder:
         return self.teaming_to_team(team)
 
     cdef list create_teaming2(self):
-        algo = algos[self.algo_name]({ 'n_students': self.num_students })
+        fitness = self.create_fitness()
+        params = {
+            'n_students': self.num_students,
+            'fitness': fitness
+        }
+        algo = algos[self.algo_name](params)
         return algo.run()
 
     cdef list teaming_to_team(self, list teaming):

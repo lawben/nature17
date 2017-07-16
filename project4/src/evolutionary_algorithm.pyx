@@ -1,5 +1,6 @@
 import random
 import sys
+import time
 
 import cython
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
@@ -7,9 +8,11 @@ from cython.parallel import parallel, prange
 import numpy as np
 cimport numpy as np
 
-from libc.stdlib cimport rand, RAND_MAX, malloc, free
+from libc.stdlib cimport rand, RAND_MAX, srand, malloc, free
 
 from diversity cimport Student
+from fitness import Fitness
+from fitness cimport Fitness
 
 cdef class EvolutionaryAlgorithm:
     """(μ+λ)-EA
@@ -20,14 +23,17 @@ cdef class EvolutionaryAlgorithm:
     cdef int** population
     cdef int*** offsprings
     cdef int n_individuals, n_offsprings, n_students, tournament_size
-    cdef double swap_prob
+    cdef double swap_prob, best_fitness
     cdef int* best_individual
-    cdef double best_fitness
+    cdef Fitness fitness_calculator
 
-    def __init__(self, int n_individuals, int n_offsprings, int n_students):
+    def __init__(self, int n_individuals, int n_offsprings, int n_students, Fitness fitness):
+        srand(int(time.time()))
         self.n_individuals = n_individuals
         self.n_offsprings = n_offsprings
         self.n_students = n_students
+        self.fitness_calculator = fitness
+        self.best_fitness = 0.0
 
         self.tournament_size = 10
 
@@ -49,7 +55,8 @@ cdef class EvolutionaryAlgorithm:
 
         while counter <= iterations:
             if counter % 1000 == 0:
-                print('iteration %d' % counter)
+                self.print_population()
+                print('iteration %d, %s' % (counter, str(self.best_fitness)))
             self.generate_offsprings()
             self.select_offsprings()
 
@@ -120,7 +127,7 @@ cdef class EvolutionaryAlgorithm:
     #
 
     cdef double fitness(self, int* individual) nogil:
-        return 0.0
+        return self.fitness_calculator.fitness(individual)
 
     cdef int* select_best(self, int** individuals, int n) nogil:
         cdef double best_fitness = self.fitness(individuals[0])

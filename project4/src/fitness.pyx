@@ -5,13 +5,6 @@ from libc.stdlib cimport malloc, free
 from libc.math cimport log
 
 cdef class Fitness:
-    cdef int unique_genders
-    cdef int unique_disciplines
-    cdef int unique_nationalities
-    cdef int num_students
-    cdef int TEAM_SIZE
-    cdef int MAX_TEAMS
-
     def __init__(self, int unique_genders, int unique_disciplines,
                  int unique_nationalities, int num_students):
         self.unique_genders = unique_genders
@@ -21,16 +14,23 @@ cdef class Fitness:
         self.TEAM_SIZE = 5
         self.MAX_TEAMS = 16
 
-    cdef double intra_fit(self, Student *students, int *teaming) nogil:
+    cdef void set_students(self, Student* students):
+        self.students = students
+
+    cdef double fitness(self, int* teaming) nogil:
+        return self.intra_fit(teaming)
+
+    cdef double intra_fit(self, int *teaming) nogil:
         cdef double res = 0
-        cdef int i
+        cdef int i, j
         cdef short* genders = <short*> malloc(self.num_students * sizeof(short))
         cdef short* disciplines = <short*> malloc(self.num_students * sizeof(short))
         cdef short* nationalities = <short*> malloc(self.num_students * sizeof(short))
         cdef Student* s
 
         for i in range(self.num_students):
-            s = &students[i]
+            j = teaming[i]
+            s = &self.students[i]
             genders[i] = s.sex
             disciplines[i] = s.discipline
             nationalities[i] = s.nationality
@@ -59,6 +59,9 @@ cdef class Fitness:
         cdef int* item_counts = <int*> malloc(unique_items * sizeof(int))
         cdef int team_offset = self.TEAM_SIZE*team_number
 
+        for i in range(unique_items):
+            item_counts[i] = 0
+
         for i in range(team_offset, team_offset + num_team_members):
             item_counts[attributes[i]] += 1
 
@@ -69,6 +72,8 @@ cdef class Fitness:
         cdef double prob
         for i in range(unique_items):
             prob = probabilities[i]
+            if prob == 0:
+                continue
             sum_ += prob * (log(prob)/log(unique_items))
 
         free(probabilities)
