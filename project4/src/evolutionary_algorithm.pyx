@@ -159,7 +159,7 @@ cdef class EvolutionaryAlgorithm:
         cdef int** tournament_members
         with parallel():
             tournament_members = <int**> malloc(self.tournament_size * sizeof(int*))
-            for i in range(self.n_individuals):
+            for i in prange(self.n_individuals):
                 for j in range(self.tournament_size):
                     tournament_members[j] = self.rand_tournament_member()
                 self.population[i] = self.select_best(tournament_members, self.tournament_size)
