@@ -13,7 +13,7 @@ algos = {
 }
 
 cdef class DiversityFinder:
-    
+
     cdef int num_students
     cdef Student students[81]
     cdef dict dis_to_number
@@ -32,14 +32,16 @@ cdef class DiversityFinder:
         # Init student array
         cdef Student *s
         cdef int i
+
         for i in range(self.num_students):
             stud = students[i]
             s = &self.students[i]
 
             s.s_hash = stud[0].encode()
-            s.sex = False if stud[1] == "m" else True
-            s.discipline = self.dis_to_number[stud[2]] 
+            s.sex = 0 if stud[1] == "m" else 1
+            s.discipline = self.dis_to_number[stud[2]]
             s.nationality = self.nat_to_number[stud[3]]
+
 
     def _convert_students(self, students):
         self.dis_to_number = self._convert_disciplines(students)
@@ -62,7 +64,7 @@ cdef class DiversityFinder:
         # teams["teaming4"] = self.get_teaming4()
 
         return teams
-        
+
 
     def get_teaming1(self):
         cdef list team = self.create_teaming1()
@@ -83,7 +85,7 @@ cdef class DiversityFinder:
         cdef list teams = []
         cdef int student_number
         cdef int team_number = 0
-        
+
         for i in range(self.num_students):
             # teaming at i contains student number
             student_number = teaming[i]
