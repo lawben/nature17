@@ -55,7 +55,6 @@ cdef class EvolutionaryAlgorithm:
 
         while counter <= iterations:
             if counter % 1000 == 0:
-                self.print_population()
                 print('iteration %d, %s' % (counter, str(self.best_fitness)))
             self.generate_offsprings()
             self.select_offsprings()
