@@ -10,7 +10,7 @@ from rls import RLS
 from evolutionary_algorithm import EvolutionaryAlgorithm
 
 algos = {
-    'ea': lambda params: EvolutionaryAlgorithm(20, 4, **params),
+    'ea': lambda params: EvolutionaryAlgorithm(100, 5, **params),
     'rls': lambda params: RLS(**params)
 }
 

@@ -30,7 +30,7 @@ cdef class Fitness:
 
         for i in range(self.num_students):
             j = teaming[i]
-            s = &self.students[i]
+            s = &self.students[j]
             genders[i] = s.sex
             disciplines[i] = s.discipline
             nationalities[i] = s.nationality
