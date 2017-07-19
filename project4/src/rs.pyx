@@ -1,13 +1,9 @@
 #cython: boundscheck=False, wraparound=False, nonecheck=False
 import random
-import sys
 import time
 
 import cython
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
-from cython.parallel import parallel, prange
-import numpy as np
-cimport numpy as np
 
 from libc.stdlib cimport rand, RAND_MAX, srand, malloc, free
 
