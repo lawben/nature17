@@ -108,7 +108,7 @@ cdef class EvolutionaryAlgorithm:
         cdef int i
         for i in range(self.n_students):
             offspring[i] = individual[i]
-        
+
         for i in range(self.n_students):
             if self.should_swap():
                 self.swap(offspring, i, self.rand_int(self.n_students))
@@ -179,7 +179,7 @@ cdef class EvolutionaryAlgorithm:
     @cython.cdivision(True)
     cdef inline int rand_int(self, int max_int) nogil:
         return rand() % max_int
-    
+
     @cython.cdivision(True)
     cdef inline bint should_swap(self) nogil:
         return <float> rand() / RAND_MAX <= self.swap_prob
@@ -203,5 +203,3 @@ cdef class EvolutionaryAlgorithm:
     def __dealloc__(self):
         self.free_offsprings()
         self.free_population()
-
-

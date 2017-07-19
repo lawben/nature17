@@ -2,7 +2,7 @@
 import cython
 from diversity cimport Student
 from libc.stdlib cimport malloc, free
-from libc.math cimport log
+from libc.math cimport log, e
 
 cdef class Fitness:
     def __init__(self, int unique_genders, int unique_disciplines,
@@ -74,7 +74,7 @@ cdef class Fitness:
             prob = probabilities[i]
             if prob == 0:
                 continue
-            sum_ += prob * (log(prob)/log(unique_items))
+            sum_ += prob * (log(prob)/log(e))
 
         free(probabilities)
         free(item_counts)
