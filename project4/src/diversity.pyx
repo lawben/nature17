@@ -7,11 +7,13 @@ cimport numpy as np
 from fitness import Fitness
 from fitness cimport Fitness
 from rls import RLS
+from rs import RS
 from evolutionary_algorithm import EvolutionaryAlgorithm
 
 algos = {
     'ea': lambda params: EvolutionaryAlgorithm(100, 5, **params),
-    'rls': lambda params: RLS(**params)
+    'rls': lambda params: RLS(**params),
+    'rs': lambda params: RS(**params)
 }
 
 cdef class DiversityFinder:
@@ -24,7 +26,7 @@ cdef class DiversityFinder:
 
     def __init__(self, students, algo_name):
         self.num_students = len(students)
-        
+
         self.algo_name = algo_name
 
         self.dis_to_number = None
