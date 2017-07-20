@@ -6,7 +6,7 @@ from diversity import DiversityFinder
 
 RES_DIR = os.path.join(os.path.dirname(__file__), "results")
 
-ALGO_NAME = 'ea'
+ALGO_NAME = 'rs'
 
 
 def main(csv_file):

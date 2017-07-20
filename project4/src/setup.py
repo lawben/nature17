@@ -6,7 +6,8 @@ import numpy
 
 ext_modules = [Extension("*", ["*.pyx"], libraries=["m"],
                extra_compile_args=["-ffast-math", "-w"],
-               include_dirs=[numpy.get_include()])]
+               include_dirs=[numpy.get_include()],
+               language="c++")]
 
 setup(
     name="D-School Diversity",

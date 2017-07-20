@@ -1,6 +1,7 @@
 .python-version
 __pycache__
 *.c
+*.cpp
 *.html
 *.so
 *.pyc
