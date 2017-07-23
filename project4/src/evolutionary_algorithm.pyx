@@ -267,11 +267,11 @@ cdef class EvolutionaryAlgorithm:
         arr[j] = tmp
 
     cdef void print_array(self, int* arr, int n):
-            cdef list line = []
-            cdef int i
-            for i in range(n):
-                line.append(str(arr[i]))
-            print(','.join(line))
+        cdef list line = []
+        cdef int i
+        for i in range(n):
+            line.append(str(arr[i]))
+        print(','.join(line))
 
     def __dealloc__(self):
         self.free_offsprings()
