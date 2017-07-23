@@ -69,10 +69,12 @@ cdef class DiversityFinder:
     def get_diverse_teams(self):
         teams = {}
 
-        teams["teaming1"] = self.get_teaming1()
+        #teams["teaming1"] = self.get_teaming1()
         teams["teaming2"] = self.get_teaming2()
         # teams["teaming3"] = self.get_teaming3()
         # teams["teaming4"] = self.get_teaming4()
+
+        print(11)
 
         return teams
 
@@ -97,11 +99,9 @@ cdef class DiversityFinder:
         algo = algos[self.algo_name](params)
         return algo.run()
 
-    cdef list teaming_to_team(self, list teaming):
-        cdef list teams = []
-        cdef int student_number
-        cdef int team_number = 0
-
+    def teaming_to_team(self, teaming):
+        teams = []
+        team_number = 0
         for i in range(self.num_students):
             # teaming at i contains student number
             student_number = teaming[i]

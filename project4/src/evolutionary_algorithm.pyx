@@ -1,5 +1,4 @@
 #cython: boundscheck=False, wraparound=False, nonecheck=False
-import random
 import sys
 import time
 
@@ -15,6 +14,9 @@ from diversity cimport Student
 from fitness import Fitness
 from fitness cimport Fitness
 
+cdef extern from "<algorithm>" namespace "std":
+    void random_shuffle(int* start, int* end)
+
 cdef class EvolutionaryAlgorithm:
     """(μ+λ)-EA
     μ - population size
@@ -24,12 +26,12 @@ cdef class EvolutionaryAlgorithm:
     cdef int** population
     cdef int*** offsprings
     cdef int n_individuals, n_offsprings, n_students, tournament_size
-    cdef double swap_prob, best_fitness
+    cdef double swap_prob, inverse_prob, insert_prob, shift_prob, best_fitness
     cdef int* best_individual
     cdef Fitness fitness_calculator
 
     def __init__(self, int n_individuals, int n_offsprings, int n_students, Fitness fitness):
-        srand(int(time.time()))
+        srand(<unsigned>time.time())
         self.n_individuals = n_individuals
         self.n_offsprings = n_offsprings
         self.n_students = n_students
@@ -39,10 +41,14 @@ cdef class EvolutionaryAlgorithm:
         self.tournament_size = 10
 
         self.swap_prob = <double> 1 / self.n_students
+        self.inverse_prob = <double> 1 / self.n_students
+        self.insert_prob = <double> 1 / self.n_students
+        self.shift_prob = <double> 1 / self.n_students
+
         self.init_population()
         self.init_offsprings()
 
-    def run(self, iterations=10000):
+    def run(self, iterations=1000):
         self.search(iterations)
         best = []
         for i in range(self.n_students):
@@ -53,10 +59,13 @@ cdef class EvolutionaryAlgorithm:
 
     cdef void search(self, int iterations):
         cdef int counter = 0
+        self.best_individual = self.select_best(self.population, self.n_individuals)
+        self.best_fitness = self.fitness(self.best_individual)
 
         while counter <= iterations:
-            if counter % 1000 == 0:
+            if counter % 100 == 0:
                 print('iteration %d, %s' % (counter, str(self.best_fitness)))
+                self.print_array(self.best_individual, self.n_students)
             self.generate_offsprings()
             self.select_offsprings()
 
@@ -70,13 +79,12 @@ cdef class EvolutionaryAlgorithm:
 
     cdef void init_population(self):
         self.population = <int**> PyMem_Malloc(self.n_individuals * sizeof(int*))
-        cdef list proto_individual = list(range(self.n_students))
         cdef int i, j
         for i in range(self.n_individuals):
             self.population[i] = <int*> PyMem_Malloc(self.n_students * sizeof(int))
-            random.shuffle(proto_individual)
             for j in range(self.n_students):
-                self.population[i][j] = <int> proto_individual[j]
+                self.population[i][j] = j
+            self.shuffle(self.population[i], self.n_students)
 
     cdef void free_population(self):
         cdef int i
@@ -86,9 +94,9 @@ cdef class EvolutionaryAlgorithm:
 
     cdef void init_offsprings(self):
         self.offsprings = <int***> PyMem_Malloc(self.n_individuals * sizeof(int**))
-        cdef int i, j = 0
+        cdef int i, j
         for i in range(self.n_individuals):
-            self.offsprings[i] =  <int**> PyMem_Malloc(self.n_offsprings * sizeof(int*))
+            self.offsprings[i] = <int**> PyMem_Malloc(self.n_offsprings * sizeof(int*))
             for j in range(self.n_offsprings):
                 self.offsprings[i][j] = <int*> PyMem_Malloc(self.n_students * sizeof(int))
 
@@ -104,14 +112,71 @@ cdef class EvolutionaryAlgorithm:
     # Offspring generation
     #
 
+    cdef void swap_mutation(self, int* offspring) nogil:
+        cdef int i = self.rand_int(self.n_students)
+        cdef int j = self.rand_int(self.n_students)
+        self.swap(offspring, i, j)
+
+    @cython.cdivision(True)
+    cdef void swap_all_mutation(self, int* offspring) nogil:
+        cdef int i
+        cdef float swap_prob = 1.0 / self.n_students
+        for i in range(self.n_students):
+            if self.rand_decision(swap_prob):
+                self.swap(offspring, i, self.rand_int(self.n_students))
+
+    cdef void inversion_mutation(self, int* offspring) nogil:
+        cdef int i = self.rand_int(self.n_students - 1)
+        cdef int j = self.rand_int_range(i + 1, self.n_students)
+        while i < j:
+            self.swap(offspring, i, j)
+            i += 1
+            j -= 1            
+
+    cdef void insertion_mutation(self, int* offspring) nogil:
+        cdef int i = self.rand_int(self.n_students - 1)
+        cdef int j = self.rand_int_range(i + 1, self.n_students)
+        while i < j:
+            self.swap(offspring, i, i + 1)
+            i += 1
+
+    # todo: this does not work :(
+    cdef void shift_mutation(self, int* offspring) nogil:
+        cdef int i = self.rand_int(self.n_students)
+        cdef int j = self.rand_int_range(i, self.n_students)
+        cdef int k = self.rand_int(self.n_students - 1)
+        cdef int shift_len = j - i + 1
+        cdef int left = j + 1
+        cdef int right = j + k + 1
+        cdef int s
+        for s in range(left, right):
+            self.bubble(offspring, s % self.n_students, shift_len)
+
+    cdef void bubble(self, int* offspring, int i, int shift_len) nogil:
+        cdef int left_val = i - shift_len
+        cdef int k     
+        for k in range(i - 1, left_val - 1, -1):
+            self.swap(offspring, i % self.n_students, k % self.n_students)
+            i -= 1
+
+    cdef void mutate(self, int* offspring) nogil:
+        if self.rand_decision(self.swap_prob):
+            self.swap_mutation(offspring)
+
+        if self.rand_decision(self.inverse_prob):
+            self.inversion_mutation(offspring)
+
+        if self.rand_decision(self.insert_prob):
+            self.insertion_mutation(offspring)
+
+        #if self.rand_decision(self.shift_prob):
+        #self.shift_mutation(offspring)
+
     cdef void generate_offspring(self, int* individual, int* offspring) nogil:
         cdef int i
         for i in range(self.n_students):
             offspring[i] = individual[i]
-
-        for i in range(self.n_students):
-            if self.should_swap():
-                self.swap(offspring, i, self.rand_int(self.n_students))
+        self.mutate(offspring)
 
     cdef void generate_offsprings(self) nogil:
         cdef int i, j = 0
@@ -144,7 +209,7 @@ cdef class EvolutionaryAlgorithm:
     cdef int* rand_tournament_member(self) nogil:
         cdef int individual_idx, offspring_idx
 
-        if self.rand_decision(0.5):
+        if self.rand_decision(0.0):
             # select from current population
             individual_idx = self.rand_int(self.n_individuals)
             return self.population[individual_idx]
@@ -157,12 +222,15 @@ cdef class EvolutionaryAlgorithm:
     cdef void select_offsprings(self) nogil:
         cdef int i, j
         cdef int** tournament_members
+        cdef int* best
         with parallel():
             tournament_members = <int**> malloc(self.tournament_size * sizeof(int*))
             for i in prange(self.n_individuals):
                 for j in range(self.tournament_size):
                     tournament_members[j] = self.rand_tournament_member()
-                self.population[i] = self.select_best(tournament_members, self.tournament_size)
+                best = self.select_best(tournament_members, self.tournament_size)
+                for j in range(self.n_students):
+                    self.population[i][j] = best[j]
             free(tournament_members)
 
     #
@@ -176,13 +244,18 @@ cdef class EvolutionaryAlgorithm:
         for i in range(self.n_individuals):
             self.print_array(self.population[i], self.n_students)
 
-    @cython.cdivision(True)
-    cdef inline int rand_int(self, int max_int) nogil:
-        return rand() % max_int
+    cdef void shuffle(self, int* arr, int length):
+        random_shuffle(&arr[0], &arr[length])
 
     @cython.cdivision(True)
-    cdef inline bint should_swap(self) nogil:
-        return <float> rand() / RAND_MAX <= self.swap_prob
+    cdef inline int rand_int(self, int max_number) nogil:
+        """Random number in range [0, max_number)"""
+        return rand() % max_number
+
+    @cython.cdivision(True)
+    cdef inline int rand_int_range(self, int min_number, int max_number) nogil:
+        """Random number in range [min_number, max_number)"""
+        return rand() % (max_number - min_number) + min_number
 
     @cython.cdivision(True)
     cdef inline bint rand_decision(self, float prob) nogil:

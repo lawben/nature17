@@ -22,12 +22,15 @@ def main(csv_file):
     }
 
     for semester, studs in students.items():
+        print(semester)
         div = DiversityFinder(studs, ALGO_NAME)
         for teaming, teams in div.get_diverse_teams().items():
             with open(res_files[teaming], "a") as res_f:
                 lines = ["{},{},{}\n".format(s_hash, team, semester)
                          for s_hash, team in teams]
                 res_f.writelines(lines)
+
+    print(100)
 
 
 if __name__ == '__main__':
