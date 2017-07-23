@@ -7,6 +7,10 @@ from diversity import DiversityFinder
 
 RES_DIR = os.path.join(os.path.dirname(__file__), "results")
 
+<<<<<<< HEAD
+=======
+ALGO_NAME = 'rls'
+>>>>>>> Update RLS
 
 def main(csv_file, algo_name='ea'):
     students = parse(csv_file)
