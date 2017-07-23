@@ -29,7 +29,6 @@ def main(csv_file):
                 lines = ["{},{},{}\n".format(s_hash, team, semester)
                          for s_hash, team in teams]
                 res_f.writelines(lines)
-        break
 
 
 if __name__ == '__main__':
