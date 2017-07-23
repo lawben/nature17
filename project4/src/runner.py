@@ -1,4 +1,5 @@
 import os
+import sys
 from datetime import datetime
 
 from parser import parse
@@ -6,10 +7,8 @@ from diversity import DiversityFinder
 
 RES_DIR = os.path.join(os.path.dirname(__file__), "results")
 
-ALGO_NAME = 'rs'
 
-
-def main(csv_file):
+def main(csv_file, algo_name='ea'):
     students = parse(csv_file)
     run_res_dir = os.path.join(RES_DIR, datetime.now().strftime("%Y%m%d-%H%M%S"))
     os.makedirs(run_res_dir)
@@ -22,7 +21,8 @@ def main(csv_file):
     }
 
     for semester, studs in students.items():
-        div = DiversityFinder(studs, ALGO_NAME)
+        print(semester)
+        div = DiversityFinder(studs, algo_name)
         for teaming, teams in div.get_diverse_teams().items():
             with open(res_files[teaming], "a") as res_f:
                 lines = ["{},{},{}\n".format(s_hash, team, semester)
@@ -39,6 +39,8 @@ if __name__ == '__main__':
     file_ = os.path.join(file_dir, "..", "project4.csv")
 
     os.makedirs(RES_DIR, exist_ok=True)
-
-    main(file_)
+    if len(sys.argv) == 2:
+        main(file_, sys.argv[1])
+    else:
+        main(file_)
     print("Found all diverse Teams!")

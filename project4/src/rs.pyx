@@ -20,6 +20,7 @@ cdef class RS:
     cdef int* population
     cdef Fitness fitness_calculator
     cdef double best_fitness
+    cdef int best_collisions
 
     def __init__(self, int n_students, Fitness fitness):
         srand(int(time.time()))
@@ -35,6 +36,7 @@ cdef class RS:
 
         self.fitness_calculator = fitness
         self.best_fitness = self.fitness(self.best_individual)
+        self.best_collisions = self.fitness_calculator.collisions(self.best_individual)
 
     def run(self, iterations=100000000):
         self.search(iterations)
@@ -46,27 +48,28 @@ cdef class RS:
         cdef int counter = 0
         cdef int i
         cdef double new_fitness
+        cdef int collisions 
         cdef list best
 
         while counter <= iterations:
             random_shuffle(&self.population[0], &self.population[self.n_students])
-            new_fitness = self.fitness(self.population)
 
-            if new_fitness > self.best_fitness:
+            if self.fitness_calculator.dominates(self.best_individual, self.population) == 1:
+                self.best_fitness = self.fitness(self.population)
+                self.best_collisions = self.fitness_calculator.collisions(self.population)
                 best = []
                 for i in range(self.n_students):
                     self.best_individual[i] = <int> self.population[i]
                     best.append(self.best_individual[i])
-                self.best_fitness = new_fitness
                 counter_no_changes = 0
                 notified = False
 
             if counter_no_changes > 1000000 and not notified:
-                self.notify("Score {} with {} after {} iterations".format(self.best_fitness, best, counter))
+                self.notify("Score {} with {} fitness and {} collisions after {} iterations".format(self.best_fitness, self.best_collisions, best, counter))
                 notified = True
 
             if counter % 1000 == 0:
-                print('iteration %d, %s' % (counter, str(self.best_fitness)))
+                print('iteration: %d, fitness %s, collisions: %s' % (counter, str(self.best_fitness), str(self.best_collisions)))
 
             counter += 1
             counter_no_changes += 1

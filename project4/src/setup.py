@@ -5,7 +5,7 @@ from Cython.Build import cythonize
 import numpy
 
 ext_modules = [Extension("*", ["*.pyx"], libraries=["m"],
-               extra_compile_args=["-ffast-math", "-w"],
+               extra_compile_args=["-ffast-math", "-w", "-std=c++11"],
                include_dirs=[numpy.get_include()],
                language="c++")]
 
