@@ -2,23 +2,77 @@
 import cython
 from diversity cimport Student
 from libc.stdlib cimport malloc, free
-from libc.math cimport log, e
+from libc.math cimport log
+from libcpp.vector cimport vector
+from libcpp.iterator cimport back_inserter, back_insert_iterator
+from libcpp.algorithm cimport sort as cppsort
+from cython.operator cimport dereference as deref, preincrement as inc
+
+ctypedef vector[int].iterator iterator_t
+cdef extern from "<algorithm>" namespace "std" nogil:
+    iterator_t set_intersection(iterator_t first1, iterator_t last1, iterator_t first2, iterator_t last2, iterator_t result)
 
 cdef class Fitness:
     def __init__(self, int unique_genders, int unique_disciplines,
-                 int unique_nationalities, int num_students):
+                 int unique_nationalities, int num_students, list teamings):
         self.unique_genders = unique_genders
         self.unique_disciplines = unique_disciplines
         self.unique_nationalities = unique_nationalities
         self.num_students = num_students
-        self.TEAM_SIZE = 5
-        self.MAX_TEAMS = 16
+        self.TEAM_SIZE = <int> 5
+        self.MAX_TEAMS = <int> 16
+        self.n_teamings = <int> len(teamings)
+        if self.n_teamings > 0:
+            self.init_reference_vectors(teamings)
+
+    cdef vector[vector[int]] teaming_vectors(self, int* teaming) nogil:
+        cdef vector[vector[int]] vectors
+        cdef vector[int] vector
+        cdef int i, j, team_size
+        for i in range(self.MAX_TEAMS):
+            vectors.push_back(vector)
+            if i == self.MAX_TEAMS - 1 and self.num_students == 81:
+                team_size = 6
+            else:
+                team_size = self.TEAM_SIZE
+            for j in range(team_size):
+                vectors[i].push_back(<int> teaming[i * team_size + j])
+            cppsort(vectors[i].begin(), vectors[i].end())
+
+        return vectors
+
+    cdef void init_reference_vectors(self, list teamings):
+        cdef int i, j
+        cdef int* teaming = <int*> malloc(self.num_students * sizeof(int))
+        for i in range(self.n_teamings):
+            for j in range(self.num_students):
+                teaming[j] = <int> teamings[i][j]
+            self.reference_vectors.push_back(self.teaming_vectors(teaming))
+        free(teaming)
 
     cdef void set_students(self, Student* students):
         self.students = students
 
     cdef double fitness(self, int* teaming) nogil:
         return self.intra_fit(teaming)
+
+    cdef int dominates(self, int* teaming1, int* teaming2) nogil:
+        """ Calculates fitness and collisions to determine which teaming dominates
+        return values:
+        -1 : teaming1 dominates
+        0  : no teaming dominates
+        1  : teaming2 dominates
+        """
+        cdef double fit1 = self.fitness(teaming1)
+        cdef int col1 = self.collisions(teaming1)
+        cdef double fit2 = self.fitness(teaming2)
+        cdef int col2 = self.collisions(teaming2)
+        if fit1 >= fit2 and col1 <= col2:
+            return -1
+        elif fit2 >= fit1 and col2 <= col1:
+            return 1
+        else:
+            return 0
 
     cdef double intra_fit(self, int *teaming) nogil:
         cdef double res = 0
@@ -74,8 +128,43 @@ cdef class Fitness:
             prob = probabilities[i]
             if prob == 0:
                 continue
-            sum_ += prob * (log(prob)/log(e))
+            sum_ += prob * log(prob)
 
         free(probabilities)
         free(item_counts)
         return -sum_
+
+    cdef inline int choose_two(self, int n) nogil:
+            return n * (n - 1) // 2
+
+    cdef int collisions_between(self, vector[int] v1, vector[int] v2) nogil:
+        cdef int i = 0
+        cdef int j = 0
+        cdef int collisions = 0
+        
+        while i < v1.size() and j < v2.size():
+            if v1[i] == v2[j]:
+                collisions += 1
+                i += 1
+                j += 1
+            elif v1[i] < v2[j]:
+                i += 1
+            else:
+                j += 1
+           
+        return self.choose_two(collisions)
+        
+
+    cdef int collisions(self, int* teaming) nogil:
+        if self.n_teamings == 0:
+            return 0
+        cdef vector[vector[int]] teaming_vectors = self.teaming_vectors(teaming)
+        cdef int collisions = 0
+        cdef int i, j, s, team_size
+
+        for s in range(self.n_teamings):
+            for i in range(self.MAX_TEAMS):
+                for j in range(self.MAX_TEAMS):
+                    collisions += self.collisions_between(self.reference_vectors[s][i], teaming_vectors[j])
+
+        return collisions
