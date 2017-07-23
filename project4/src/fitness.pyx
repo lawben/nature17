@@ -122,28 +122,6 @@ cdef class Fitness:
         cdef vector[int] intersection
         set_intersection(v1.begin(), v1.end(), v2.begin(), v2.end(), intersection.begin())
         return intersection.size()
-        # cdef set[int].iterator it1 = set1.begin()
-        # cdef set[int].iterator it2 = set2.begin()
-        
-        # cdef int cur1 = deref(it1)
-        # cdef int cur2 = deref(it2)
-        # inc(it1); inc(it2)
-        # while it1 != set1.end() and it2 != set2.end():
-        #     if cur1 == cur2:
-        #         collisions += 1
-        #         cur1 = deref(it1)
-        #         cur2 = deref(it2)
-        #         inc(it1); inc(it2)
-        #     elif cur1 < cur2:
-        #         cur1 = deref(it1)
-        #         inc(it1)
-        #     else:
-        #         cur2 = deref(it2)
-        #         inc(it2)
-        # if cur1 == cur2:
-        #     collisions += 1
-                
-        #return collisions
 
     cdef int collisions(self, int* teaming) nogil:
         if self.n_teamings == 0:
