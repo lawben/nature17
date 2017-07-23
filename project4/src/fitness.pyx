@@ -134,6 +134,9 @@ cdef class Fitness:
         free(item_counts)
         return -sum_
 
+    cdef inline int choose_two(self, int n) nogil:
+            return n * (n - 1) // 2
+
     cdef int collisions_between(self, vector[int] v1, vector[int] v2) nogil:
         cdef int i = 0
         cdef int j = 0
@@ -149,7 +152,7 @@ cdef class Fitness:
             else:
                 j += 1
            
-        return collisions
+        return self.choose_two(collisions)
         
 
     cdef int collisions(self, int* teaming) nogil:

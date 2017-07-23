@@ -20,6 +20,7 @@ cdef class Fitness:
     cdef double intra_fit(self, int *teaming) nogil
     cdef double get_team_entropy(self, short *attributes, int unique_items,
                                  int num_team_members, int team_number) nogil
+    cdef inline int choose_two(self, int n) nogil
     cdef int collisions_between(self, vector[int] v1, vector[int] v2) nogil
     cdef int collisions(self, int* teaming) nogil
                                 

@@ -49,7 +49,7 @@ cdef class EvolutionaryAlgorithm:
         self.init_population()
         self.init_offsprings()
 
-    def run(self, iterations=500):
+    def run(self, iterations=10000):
         self.search(iterations)
         best = []
         for i in range(self.n_students):
@@ -65,7 +65,7 @@ cdef class EvolutionaryAlgorithm:
         self.best_collisions = self.fitness_calculator.collisions(self.best_individual)
 
         while counter <= iterations:
-            if counter % 100 == 0:
+            if counter % 1000 == 0:
                 print('iteration: %d, fitness %s, collisions: %s' % (counter, str(self.best_fitness), str(self.best_collisions)))
                 self.print_array(self.best_individual, self.n_students)
             self.generate_offsprings()
@@ -143,18 +143,6 @@ cdef class EvolutionaryAlgorithm:
             self.swap(offspring, i, i + 1)
             i += 1
 
-    # todo: this does not work :(
-    cdef void shift_mutation(self, int* offspring) nogil:
-        cdef int i = self.rand_int(self.n_students)
-        cdef int j = self.rand_int_range(i, self.n_students)
-        cdef int k = self.rand_int(self.n_students - 1)
-        cdef int shift_len = j - i + 1
-        cdef int left = j + 1
-        cdef int right = j + k + 1
-        cdef int s
-        for s in range(left, right):
-            self.bubble(offspring, s % self.n_students, shift_len)
-
     cdef void bubble(self, int* offspring, int i, int shift_len) nogil:
         cdef int left_val = i - shift_len
         cdef int k     
@@ -171,9 +159,6 @@ cdef class EvolutionaryAlgorithm:
 
         if self.rand_decision(self.insert_prob):
             self.insertion_mutation(offspring)
-
-        #if self.rand_decision(self.shift_prob):
-        #self.shift_mutation(offspring)
 
     cdef void generate_offspring(self, int* individual, int* offspring) nogil:
         cdef int i
@@ -215,7 +200,7 @@ cdef class EvolutionaryAlgorithm:
     cdef int* rand_tournament_member(self) nogil:
         cdef int individual_idx, offspring_idx
 
-        if self.rand_decision(0.0):
+        if self.rand_decision(0.4):
             # select from current population
             individual_idx = self.rand_int(self.n_individuals)
             return self.population[individual_idx]
