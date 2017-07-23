@@ -6,7 +6,7 @@ from diversity import DiversityFinder
 
 RES_DIR = os.path.join(os.path.dirname(__file__), "results")
 
-ALGO_NAME = 'rs'
+ALGO_NAME = 'ea'
 
 
 def main(csv_file):
@@ -29,8 +29,7 @@ def main(csv_file):
                 lines = ["{},{},{}\n".format(s_hash, team, semester)
                          for s_hash, team in teams]
                 res_f.writelines(lines)
-
-    print(100)
+        break
 
 
 if __name__ == '__main__':

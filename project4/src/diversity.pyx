@@ -74,8 +74,6 @@ cdef class DiversityFinder:
         # teams["teaming3"] = self.get_teaming3()
         # teams["teaming4"] = self.get_teaming4()
 
-        print(11)
-
         return teams
 
 
@@ -110,7 +108,7 @@ cdef class DiversityFinder:
             s_hash = self.students[student_number].s_hash.decode()[:32]
 
             # Each block of 5 students belong to one team
-            team_number = i / 5
+            team_number = i // 5
 
             # Last team has 6 people, if neccessary
             if i == 80:
