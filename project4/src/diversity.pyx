@@ -46,11 +46,11 @@ cdef class DiversityFinder:
             s.discipline = self.dis_to_number[stud[2]]
             s.nationality = self.nat_to_number[stud[3]]
 
-    def create_fitness(self):
+    def create_fitness(self, other_teamings):
         unique_genders = 2
         unique_disciplines = len(self.dis_to_number)
         unique_nationalities = len(self.nat_to_number)
-        fitness = Fitness(unique_genders, unique_disciplines, unique_nationalities, self.num_students)
+        fitness = Fitness(unique_genders, unique_disciplines, unique_nationalities, self.num_students, other_teamings)
         fitness.set_students(self.students)
         return fitness
 
@@ -67,29 +67,21 @@ cdef class DiversityFinder:
         return {nat: num for num, nat in enumerate(nationalities)}
 
     def get_diverse_teams(self):
+        teaming1 = self.create_random_teaming()
+        teaming2 = self.create_optimized_teaming([])
+        teaming3 = self.create_optimized_teaming([teaming2])
+        teaming4 = self.create_optimized_teaming([teaming2, teaming3])
+
         teams = {}
-
-        #teams["teaming1"] = self.get_teaming1()
-        teams["teaming2"] = self.get_teaming2()
-        # teams["teaming3"] = self.get_teaming3()
-        # teams["teaming4"] = self.get_teaming4()
-
+        for i, teaming in enumerate([teaming1, teaming2, teaming3, teaming4]):
+            teams["teaming%d" % (i + 1)] = self.teaming_to_team(teaming)
         return teams
 
-
-    def get_teaming1(self):
-        cdef list team = self.create_teaming1()
-        return self.teaming_to_team(team)
-
-    cdef list create_teaming1(self):
+    cdef list create_random_teaming(self):
         return list(range(self.num_students))
 
-    def get_teaming2(self):
-        cdef list team = self.create_teaming2()
-        return self.teaming_to_team(team)
-
-    cdef list create_teaming2(self):
-        fitness = self.create_fitness()
+    cdef list create_optimized_teaming(self, other_teamings):
+        fitness = self.create_fitness(other_teamings)
         params = {
             'n_students': self.num_students,
             'fitness': fitness

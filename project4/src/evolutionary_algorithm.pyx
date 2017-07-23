@@ -25,7 +25,7 @@ cdef class EvolutionaryAlgorithm:
 
     cdef int** population
     cdef int*** offsprings
-    cdef int n_individuals, n_offsprings, n_students, tournament_size
+    cdef int n_individuals, n_offsprings, n_students, tournament_size, best_collisions
     cdef double swap_prob, inverse_prob, insert_prob, shift_prob, best_fitness
     cdef int* best_individual
     cdef Fitness fitness_calculator
@@ -37,6 +37,7 @@ cdef class EvolutionaryAlgorithm:
         self.n_students = n_students
         self.fitness_calculator = fitness
         self.best_fitness = 0.0
+        self.best_collisions = 0
 
         self.tournament_size = 10
 
@@ -48,7 +49,7 @@ cdef class EvolutionaryAlgorithm:
         self.init_population()
         self.init_offsprings()
 
-    def run(self, iterations=1000):
+    def run(self, iterations=500):
         self.search(iterations)
         best = []
         for i in range(self.n_students):
@@ -61,16 +62,18 @@ cdef class EvolutionaryAlgorithm:
         cdef int counter = 0
         self.best_individual = self.select_best(self.population, self.n_individuals)
         self.best_fitness = self.fitness(self.best_individual)
+        self.best_collisions = self.fitness_calculator.collisions(self.best_individual)
 
         while counter <= iterations:
             if counter % 100 == 0:
-                print('iteration %d, %s' % (counter, str(self.best_fitness)))
+                print('iteration: %d, fitness %s, collisions: %s' % (counter, str(self.best_fitness), str(self.best_collisions)))
                 self.print_array(self.best_individual, self.n_students)
             self.generate_offsprings()
             self.select_offsprings()
 
             self.best_individual = self.select_best(self.population, self.n_individuals)
             self.best_fitness = self.fitness(self.best_individual)
+            self.best_collisions = self.fitness_calculator.collisions(self.best_individual)
             counter += 1
 
     #
@@ -195,15 +198,18 @@ cdef class EvolutionaryAlgorithm:
         return self.fitness_calculator.fitness(individual)
 
     cdef int* select_best(self, int** individuals, int n) nogil:
-        cdef double best_fitness = self.fitness(individuals[0])
+        #cdef double best_fitness = self.fitness(individuals[0])
         cdef int* local_best_individual = individuals[0]
-        cdef int i
+        cdef int i, d
         cdef double current_fitness
         for i in range(1, n):
-            current_fitness = self.fitness(individuals[i])
-            if current_fitness >= best_fitness:
-                best_fitness = current_fitness
+            d = self.fitness_calculator.dominates(local_best_individual, individuals[i])
+            if d == 1:
                 local_best_individual = individuals[i]
+            #current_fitness = self.fitness(individuals[i])
+            #if current_fitness >= best_fitness:
+            #    best_fitness = current_fitness
+            #    local_best_individual = individuals[i]
         return local_best_individual
 
     cdef int* rand_tournament_member(self) nogil:

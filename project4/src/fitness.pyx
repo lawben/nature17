@@ -4,12 +4,13 @@ from diversity cimport Student
 from libc.stdlib cimport malloc, free
 from libc.math cimport log
 from libcpp.vector cimport vector
+from libcpp.iterator cimport back_inserter, back_insert_iterator
 from libcpp.algorithm cimport sort as cppsort
 from cython.operator cimport dereference as deref, preincrement as inc
 
 ctypedef vector[int].iterator iterator_t
 cdef extern from "<algorithm>" namespace "std" nogil:
-    iterator_t set_intersection (iterator_t first1, iterator_t last1, iterator_t first2, iterator_t last2, iterator_t result);
+    iterator_t set_intersection(iterator_t first1, iterator_t last1, iterator_t first2, iterator_t last2, iterator_t result)
 
 cdef class Fitness:
     def __init__(self, int unique_genders, int unique_disciplines,
@@ -45,7 +46,7 @@ cdef class Fitness:
         cdef int* teaming = <int*> malloc(self.num_students * sizeof(int))
         for i in range(self.n_teamings):
             for j in range(self.num_students):
-                teaming[j] = teamings[i][j]
+                teaming[j] = <int> teamings[i][j]
             self.reference_vectors.push_back(self.teaming_vectors(teaming))
         free(teaming)
 
@@ -55,8 +56,23 @@ cdef class Fitness:
     cdef double fitness(self, int* teaming) nogil:
         return self.intra_fit(teaming)
 
-    cdef bint dominates(self, int* teaming1, int* teaming2) nogil:
-        return 1
+    cdef int dominates(self, int* teaming1, int* teaming2) nogil:
+        """ Calculates fitness and collisions to determine which teaming dominates
+        return values:
+        -1 : teaming1 dominates
+        0  : no teaming dominates
+        1  : teaming2 dominates
+        """
+        cdef double fit1 = self.fitness(teaming1)
+        cdef int col1 = self.collisions(teaming1)
+        cdef double fit2 = self.fitness(teaming2)
+        cdef int col2 = self.collisions(teaming2)
+        if fit1 >= fit2 and col1 <= col2:
+            return -1
+        elif fit2 >= fit1 and col2 <= col1:
+            return 1
+        else:
+            return 0
 
     cdef double intra_fit(self, int *teaming) nogil:
         cdef double res = 0
@@ -118,10 +134,23 @@ cdef class Fitness:
         free(item_counts)
         return -sum_
 
-    cdef int collisions_between(self, vector[int]* v1, vector[int]* v2) nogil:
-        cdef vector[int] intersection
-        set_intersection(v1.begin(), v1.end(), v2.begin(), v2.end(), intersection.begin())
-        return intersection.size()
+    cdef int collisions_between(self, vector[int] v1, vector[int] v2) nogil:
+        cdef int i = 0
+        cdef int j = 0
+        cdef int collisions = 0
+        
+        while i < v1.size() and j < v2.size():
+            if v1[i] == v2[j]:
+                collisions += 1
+                i += 1
+                j += 1
+            elif v1[i] < v2[j]:
+                i += 1
+            else:
+                j += 1
+           
+        return collisions
+        
 
     cdef int collisions(self, int* teaming) nogil:
         if self.n_teamings == 0:
@@ -133,6 +162,6 @@ cdef class Fitness:
         for s in range(self.n_teamings):
             for i in range(self.MAX_TEAMS):
                 for j in range(self.MAX_TEAMS):
-                    collisions += self.collisions_between(&self.reference_vectors[s][i], &teaming_vectors[j])
+                    collisions += self.collisions_between(self.reference_vectors[s][i], teaming_vectors[j])
 
         return collisions

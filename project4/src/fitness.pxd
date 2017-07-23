@@ -16,10 +16,10 @@ cdef class Fitness:
     cdef void init_reference_vectors(self, list teamings)
     cdef void set_students(self, Student* students)
     cdef double fitness(self, int* teaming) nogil
-    cdef bint dominates(self, int* teaming1, int* teaming2) nogil
+    cdef int dominates(self, int* teaming1, int* teaming2) nogil
     cdef double intra_fit(self, int *teaming) nogil
     cdef double get_team_entropy(self, short *attributes, int unique_items,
                                  int num_team_members, int team_number) nogil
-    cdef int collisions_between(self, vector[int]* set1, vector[int]* set2) nogil
+    cdef int collisions_between(self, vector[int] v1, vector[int] v2) nogil
     cdef int collisions(self, int* teaming) nogil
                                 
