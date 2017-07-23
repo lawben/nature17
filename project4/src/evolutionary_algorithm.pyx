@@ -143,13 +143,6 @@ cdef class EvolutionaryAlgorithm:
             self.swap(offspring, i, i + 1)
             i += 1
 
-    cdef void bubble(self, int* offspring, int i, int shift_len) nogil:
-        cdef int left_val = i - shift_len
-        cdef int k     
-        for k in range(i - 1, left_val - 1, -1):
-            self.swap(offspring, i % self.n_students, k % self.n_students)
-            i -= 1
-
     cdef void mutate(self, int* offspring) nogil:
         if self.rand_decision(self.swap_prob):
             self.swap_mutation(offspring)
