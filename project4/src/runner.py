@@ -8,7 +8,7 @@ from diversity import DiversityFinder
 RES_DIR = os.path.join(os.path.dirname(__file__), "results")
 
 
-def main(csv_file, algo_name='ea'):
+def main(csv_file, algo_name='rls'):
     students = parse(csv_file)
     run_res_dir = os.path.join(RES_DIR, datetime.now().strftime("%Y%m%d-%H%M%S"))
     os.makedirs(run_res_dir)
@@ -28,7 +28,6 @@ def main(csv_file, algo_name='ea'):
                 lines = ["{},{},{}\n".format(s_hash, team, semester)
                          for s_hash, team in teams]
                 res_f.writelines(lines)
-                return
 
 
 if __name__ == '__main__':
