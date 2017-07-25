@@ -28,6 +28,7 @@ def main(csv_file, algo_name='ea'):
                 lines = ["{},{},{}\n".format(s_hash, team, semester)
                          for s_hash, team in teams]
                 res_f.writelines(lines)
+                return
 
 
 if __name__ == '__main__':
