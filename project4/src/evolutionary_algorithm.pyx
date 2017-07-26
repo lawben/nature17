@@ -9,6 +9,7 @@ import numpy as np
 cimport numpy as np
 
 from libc.stdlib cimport rand, RAND_MAX, srand, malloc, free
+from libcpp.set cimport set
 
 from diversity cimport Student
 from fitness import Fitness
@@ -26,7 +27,7 @@ cdef class EvolutionaryAlgorithm:
     cdef int** population
     cdef int*** offsprings
     cdef int n_individuals, n_offsprings, n_students, tournament_size, best_collisions
-    cdef double swap_prob, inverse_prob, insert_prob, shift_prob, best_fitness
+    cdef double swap_prob, inverse_prob, insert_prob, shift_prob, cross_over_prob, best_fitness
     cdef int* best_individual
     cdef Fitness fitness_calculator
 
@@ -41,16 +42,17 @@ cdef class EvolutionaryAlgorithm:
 
         self.tournament_size = 10
 
-        self.swap_prob = <double> 1 / self.n_students
-        self.inverse_prob = <double> 1 / self.n_students
-        self.insert_prob = <double> 1 / self.n_students
-        self.shift_prob = <double> 1 / self.n_students
+        self.swap_prob = <double> 1 / 4
+        self.inverse_prob = <double> 1 / 4
+        self.insert_prob = <double> 1 / 4
+        self.shift_prob = <double> 1 / 4
+        self.cross_over_prob = <double> 0.5
 
         self.init_population()
         self.init_offsprings()
 
-    def run(self, iterations=10000):
-        self.search(iterations)
+    def run(self, iterations=5000, no_change=1000):
+        self.search(iterations, no_change)
         best = []
         for i in range(self.n_students):
             best.append(self.best_individual[i])
@@ -58,23 +60,36 @@ cdef class EvolutionaryAlgorithm:
             assert s in best
         return best
 
-    cdef void search(self, int iterations):
+    cdef void search(self, int max_iterations, int max_no_change):
         cdef int counter = 0
+        cdef int no_change_counter = 0
+        cdef int tmp_collisions = 0
+        cdef double tmp_fitness = 0.0
         self.best_individual = self.select_best(self.population, self.n_individuals)
         self.best_fitness = self.fitness(self.best_individual)
         self.best_collisions = self.fitness_calculator.collisions(self.best_individual)
 
-        while counter <= iterations:
-            if counter % 1000 == 0:
-                print('iteration: %d, fitness %s, collisions: %s' % (counter, str(self.best_fitness), str(self.best_collisions)))
-                self.print_array(self.best_individual, self.n_students)
+        while counter <= max_iterations and no_change_counter <= max_no_change:
+            #if counter % 1000 == 0:
+            #    print('iteration: %d, fitness %s, collisions: %s' % (counter, str(self.best_fitness), str(self.best_collisions)))
             self.generate_offsprings()
             self.select_offsprings()
 
             self.best_individual = self.select_best(self.population, self.n_individuals)
-            self.best_fitness = self.fitness(self.best_individual)
-            self.best_collisions = self.fitness_calculator.collisions(self.best_individual)
+            tmp_fitness = self.fitness(self.best_individual)
+            tmp_collisions = self.fitness_calculator.collisions(self.best_individual)
+
+            if tmp_fitness == self.best_fitness and tmp_collisions == self.best_collisions:
+                no_change_counter += 1
+            else:
+                no_change_counter = 0
+
+            self.best_fitness = tmp_fitness
+            self.best_collisions = tmp_collisions
+
             counter += 1
+        print('final result:')
+        print('iteration: %d, fitness %s, collisions: %s' % (counter, str(self.best_fitness), str(self.best_collisions)))
 
     #
     # Memory allocation and deallocation
@@ -153,20 +168,42 @@ cdef class EvolutionaryAlgorithm:
         if self.rand_decision(self.insert_prob):
             self.insertion_mutation(offspring)
 
-    cdef void generate_offspring(self, int* individual, int* offspring) nogil:
-        cdef int i
-        for i in range(self.n_students):
-            offspring[i] = individual[i]
-        self.mutate(offspring)
+    cdef void clone_offspring(self, int* individual, int* offspring) nogil:
+        self.copy(individual, offspring)
+
+    cdef void cross_over(self, int* parent1, int* parent2, int* offspring) nogil:
+        cdef int start = self.rand_int(self.n_students - 1)
+        cdef int end = self.rand_int_range(start + 1, self.n_students)
+        cdef set[int]* sequence = new set[int]()
+        cdef int i, j
+        for i in range(start, end + 1):
+            sequence.insert(parent1[i])
+        i = 0
+        j = 0
+        while i < self.n_students:
+            if i >= start and i <= end:
+                offspring[i] = parent1[i]
+                i += 1
+            elif sequence.find(parent2[j]) == sequence.end():
+                offspring[i] = parent2[j]
+                i += 1
+                j += 1
+            else:
+                j+= 1
 
     cdef void generate_offsprings(self) nogil:
-        cdef int i, j = 0
+        cdef int i, j, other_parent
         cdef int* local_individual
         with parallel():
             for i in prange(self.n_individuals):
                 local_individual = self.population[i]
                 for j in prange(self.n_offsprings):
-                    self.generate_offspring(local_individual, self.offsprings[i][j])
+                    if self.rand_decision(self.cross_over_prob):
+                        other_parent = self.rand_int_without(self.n_students, i)
+                        self.cross_over(local_individual, self.population[other_parent], self.offsprings[i][j])
+                    else:
+                        self.clone_offspring(local_individual, self.offsprings[i][j])
+                    self.mutate(self.offsprings[i][j])
 
     #
     # Offspring selection
@@ -181,8 +218,7 @@ cdef class EvolutionaryAlgorithm:
         cdef int i, d
         cdef double current_fitness
         for i in range(1, n):
-            d = self.fitness_calculator.dominates(local_best_individual, individuals[i])
-            if d == 1:
+            if self.fitness_calculator.dominates(local_best_individual, individuals[i]) == 1:
                 local_best_individual = individuals[i]
             #current_fitness = self.fitness(individuals[i])
             #if current_fitness >= best_fitness:
@@ -213,8 +249,7 @@ cdef class EvolutionaryAlgorithm:
                 for j in range(self.tournament_size):
                     tournament_members[j] = self.rand_tournament_member()
                 best = self.select_best(tournament_members, self.tournament_size)
-                for j in range(self.n_students):
-                    self.population[i][j] = best[j]
+                self.copy(best, self.population[i])
             free(tournament_members)
 
     #
@@ -231,10 +266,21 @@ cdef class EvolutionaryAlgorithm:
     cdef void shuffle(self, int* arr, int length):
         random_shuffle(&arr[0], &arr[length])
 
+    cdef void copy(self, int* from_individual, int* to_individual) nogil:
+        cdef int i
+        for i in range(self.n_students):
+            to_individual[i] = from_individual[i]
+
     @cython.cdivision(True)
     cdef inline int rand_int(self, int max_number) nogil:
         """Random number in range [0, max_number)"""
         return rand() % max_number
+
+    cdef inline int rand_int_without(self, int max_number, int without) nogil:
+        cdef int random_number = self.rand_int(max_number)
+        while random_number == without:
+            random_number = self.rand_int(max_number)
+        return random_number
 
     @cython.cdivision(True)
     cdef inline int rand_int_range(self, int min_number, int max_number) nogil:

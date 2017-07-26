@@ -1,6 +1,7 @@
 import os
 import sys
 from datetime import datetime
+import argparse
 
 from parser import parse
 from diversity import DiversityFinder
@@ -8,7 +9,7 @@ from diversity import DiversityFinder
 RES_DIR = os.path.join(os.path.dirname(__file__), "results")
 
 
-def main(csv_file, algo_name='ea'):
+def main(csv_file, args):
     students = parse(csv_file)
     run_res_dir = os.path.join(RES_DIR, datetime.now().strftime("%Y%m%d-%H%M%S"))
     os.makedirs(run_res_dir)
@@ -22,7 +23,7 @@ def main(csv_file, algo_name='ea'):
 
     for semester, studs in students.items():
         print(semester)
-        div = DiversityFinder(studs, algo_name)
+        div = DiversityFinder(studs, args.algorithm, args.iterations)
         for teaming, teams in div.get_diverse_teams().items():
             with open(res_files[teaming], "a") as res_f:
                 lines = ["{},{},{}\n".format(s_hash, team, semester)
@@ -39,8 +40,10 @@ if __name__ == '__main__':
     file_ = os.path.join(file_dir, "..", "project4.csv")
 
     os.makedirs(RES_DIR, exist_ok=True)
-    if len(sys.argv) == 2:
-        main(file_, sys.argv[1])
-    else:
-        main(file_)
+    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser.add_argument('algorithm', metavar='ALGO_NAME', choices=['ea', 'rls', 'rs'])
+    parser.add_argument('--iterations', '-i', type=int, default=5000)
+    args = parser.parse_args()
+
+    main(file_, args)
     print("Found all diverse Teams!")

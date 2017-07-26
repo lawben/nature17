@@ -23,11 +23,13 @@ cdef class DiversityFinder:
     cdef dict dis_to_number
     cdef dict nat_to_number
     cdef str algo_name
+    cdef int iterations
 
-    def __init__(self, students, algo_name):
+    def __init__(self, students, algo_name, iterations):
         self.num_students = len(students)
 
         self.algo_name = algo_name
+        self.iterations = iterations
 
         self.dis_to_number = None
         self.nat_to_number = None
@@ -68,8 +70,11 @@ cdef class DiversityFinder:
 
     def get_diverse_teams(self):
         teaming1 = self.create_random_teaming()
+        print('run teaming 2')
         teaming2 = self.create_optimized_teaming([])
+        print('run teaming 3')
         teaming3 = self.create_optimized_teaming([teaming2])
+        print('run teaming 4')
         teaming4 = self.create_optimized_teaming([teaming2, teaming3])
 
         teams = {}
@@ -87,7 +92,7 @@ cdef class DiversityFinder:
             'fitness': fitness
         }
         algo = algos[self.algo_name](params)
-        return algo.run()
+        return algo.run(self.iterations)
 
     def teaming_to_team(self, teaming):
         teams = []
