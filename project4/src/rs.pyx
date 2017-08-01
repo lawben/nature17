@@ -39,16 +39,16 @@ cdef class RS:
         self.best_collisions = self.fitness_calculator.collisions(self.best_individual)
 
     def run(self, iterations=100000000):
-        self.search(iterations)
-        return
+        res = self.search(iterations)
+        return res
 
-    cdef void search(self, int iterations):
+    cdef list search(self, int iterations):
         cdef int counter_no_changes = 0
         cdef int notified = 0
         cdef int counter = 0
         cdef int i
         cdef double new_fitness
-        cdef int collisions 
+        cdef int collisions
         cdef list best
 
         while counter <= iterations:
@@ -73,6 +73,12 @@ cdef class RS:
 
             counter += 1
             counter_no_changes += 1
+
+        cdef list res = [None] * self.n_students
+        for i in range(self.n_students):
+            res[i] = self.best_individual[i]
+
+        return res
 
     cdef double fitness(self, int* individual) nogil:
         return self.fitness_calculator.fitness(individual)

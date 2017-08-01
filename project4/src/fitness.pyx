@@ -141,7 +141,7 @@ cdef class Fitness:
         cdef int i = 0
         cdef int j = 0
         cdef int collisions = 0
-        
+
         while i < v1.size() and j < v2.size():
             if v1[i] == v2[j]:
                 collisions += 1
@@ -151,9 +151,9 @@ cdef class Fitness:
                 i += 1
             else:
                 j += 1
-           
+
         return self.choose_two(collisions)
-        
+
 
     cdef int collisions(self, int* teaming) nogil:
         if self.n_teamings == 0:
