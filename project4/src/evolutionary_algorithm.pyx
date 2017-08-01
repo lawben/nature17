@@ -42,10 +42,9 @@ cdef class EvolutionaryAlgorithm:
 
         self.tournament_size = 10
 
-        self.swap_prob = <double> 1 / 4
-        self.inverse_prob = <double> 1 / 4
-        self.insert_prob = <double> 1 / 4
-        self.shift_prob = <double> 1 / 4
+        self.swap_prob = <double> 1 / 3
+        self.inverse_prob = <double> 1 / 3
+        self.insert_prob = <double> 1 / 3
         self.cross_over_prob = <double> 0.5
 
         self.init_population()
