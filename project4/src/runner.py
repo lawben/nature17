@@ -28,10 +28,10 @@ def main(csv_file, args):
     for semester, studs in students.items():
         print("{}\tBest fitness: {}".format(semester, max_entropy_teaming(
             students_data[students_data['Semester'] == semester])))
-        div=DiversityFinder(studs, args.algorithm, args.iterations)
+        div = DiversityFinder(studs, args.algorithm, args.iterations)
         for teaming, teams in div.get_diverse_teams().items():
             with open(res_files[teaming], "a") as res_f:
-                lines=["{},{},{}\n".format(s_hash, team, semester)
+                lines = ["{},{},{}\n".format(s_hash, team, semester)
                          for s_hash, team in teams]
                 res_f.writelines(lines)
 
