@@ -50,6 +50,8 @@ cdef class RS:
         cdef double new_fitness
         cdef int collisions
         cdef list best
+        cdef double optimum = 45.07472937880132
+        cdef list intervals = [x/100.0 for x in range(90, 100)]
 
         while counter <= iterations:
             random_shuffle(&self.population[0], &self.population[self.n_students])
@@ -64,12 +66,16 @@ cdef class RS:
                 counter_no_changes = 0
                 notified = False
 
+            while intervals[0]*optimum <= self.best_fitness:
+                print('interval %s, iteration: %d, fitness %s' % (intervals[0], counter, str(self.best_fitness)))
+                del intervals[0]
+
             if counter_no_changes > 1000000 and not notified:
                 self.notify("Score {} with {} fitness and {} collisions after {} iterations".format(self.best_fitness, self.best_collisions, best, counter))
                 notified = True
 
-            if counter % 1000 == 0:
-                print('iteration: %d, fitness %s, collisions: %s' % (counter, str(self.best_fitness), str(self.best_collisions)))
+            #if counter % 100000 == 0:
+            #    print('iteration: %d, fitness %s, collisions: %s' % (counter, str(self.best_fitness), str(self.best_collisions)))
 
             counter += 1
             counter_no_changes += 1

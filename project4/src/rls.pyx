@@ -43,6 +43,8 @@ cdef class RLS:
     cdef list search(self, int iterations):
         cdef int i, j, counter = 0
         cdef double new_fitness
+        cdef double optimum = 45.07472937880132
+        cdef list intervals = [x/100.0 for x in range(90, 101)]
         #cdef int* offspring = <int*> malloc(self.n_students * sizeof(int))
 
         self.best_fitness = self.fitness(self.population)
@@ -63,8 +65,12 @@ cdef class RLS:
 
             counter += 1
 
-            if counter % 10000 == 0:
-                print("iteration", counter, "fitness", self.best_fitness)
+            # if counter % 10000 == 0:
+            #     print("iteration", counter, "fitness", self.best_fitness)
+
+            while intervals[0]*optimum <= self.best_fitness:
+                print('interval %s, iteration: %d, fitness %s' % (intervals[0], counter, str(self.best_fitness)))
+                del intervals[0]
 
         cdef list res = [None] * self.n_students
         for i in range(self.n_students):

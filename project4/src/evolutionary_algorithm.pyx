@@ -67,6 +67,8 @@ cdef class EvolutionaryAlgorithm:
         self.best_individual = self.select_best(self.population, self.n_individuals)
         self.best_fitness = self.fitness(self.best_individual)
         self.best_collisions = self.fitness_calculator.collisions(self.best_individual)
+        cdef double optimum = 45.07472937880132
+        cdef list intervals = [x/100.0 for x in range(90, 101)]
 
         while counter <= max_iterations and no_change_counter <= max_no_change:
             #if counter % 1000 == 0:
@@ -85,6 +87,10 @@ cdef class EvolutionaryAlgorithm:
 
             self.best_fitness = tmp_fitness
             self.best_collisions = tmp_collisions
+
+            while intervals[0]*optimum <= self.best_fitness:
+                print('interval %s, iteration: %d, fitness %s' % (intervals[0], counter, str(self.best_fitness)))
+                del intervals[0]
 
             counter += 1
         print('final result:')
@@ -148,7 +154,7 @@ cdef class EvolutionaryAlgorithm:
         while i < j:
             self.swap(offspring, i, j)
             i += 1
-            j -= 1            
+            j -= 1
 
     cdef void insertion_mutation(self, int* offspring) nogil:
         cdef int i = self.rand_int(self.n_students - 1)

@@ -22,6 +22,8 @@ def main(csv_file, args):
     }
 
     for semester, studs in students.items():
+        if semester != "WT-16":
+            continue
         print(semester)
         div = DiversityFinder(studs, args.algorithm, args.iterations)
         for teaming, teams in div.get_diverse_teams().items():
@@ -29,6 +31,7 @@ def main(csv_file, args):
                 lines = ["{},{},{}\n".format(s_hash, team, semester)
                          for s_hash, team in teams]
                 res_f.writelines(lines)
+        break
 
 
 if __name__ == '__main__':
